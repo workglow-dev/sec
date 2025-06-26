@@ -17,7 +17,7 @@ export abstract class Form {
   static readonly name: string;
   static readonly description: string;
   static readonly forms: readonly string[];
-  static async parse(input: string | Readable): Promise<any> {
+  static async parse(xml: string): Promise<any> {
     throw new Error("parse not implemented");
   }
 
@@ -43,5 +43,5 @@ export abstract class Form {
 }
 
 export type FormConstructor = typeof Form & {
-  parse(input: string | Readable): Promise<any>;
+  parse(input: string): Promise<any>;
 };

@@ -7,8 +7,8 @@
 
 import { Form } from "../Form";
 
-export class Form_CTRW extends Form {
-  static readonly name = "Termination of Reporting Withdrawal (Regulation Crowdfunding)";
-  static readonly description = "Termination of Reporting Withdrawal";
-  static readonly forms = ["C-TR-W"] as const;
+export class Form_C_AR extends Form {
+  static readonly name = "Annual Report (Regulation Crowdfunding)";
+  static readonly description = "Annual Report";
+  static readonly forms = ["C-AR", "C-AR/A", "C-AR-W", "C-AR/A-W"] as const;
 }

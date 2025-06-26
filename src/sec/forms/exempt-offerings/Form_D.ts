@@ -6,9 +6,7 @@
 //    *******************************************************************************
 
 import { Value } from "@sinclair/typebox/value";
-import { Readable } from "node:stream";
 import { Form } from "../Form";
-import { streamToString } from "../parse_util";
 import { FormD, FormDSchema, FormDSubmission, FormDSubmissionSchema } from "./Form_D.schema";
 
 export class Form_D extends Form {
@@ -16,8 +14,7 @@ export class Form_D extends Form {
   static readonly description = "Notice of sales of unregistered securities";
   static readonly forms = ["D", "D/A"] as const;
 
-  static async parse(input: string | Readable): Promise<FormD> {
-    const xml = typeof input === "string" ? input : await streamToString(input);
+  static async parse(xml: string): Promise<FormD> {
     const parser = Form_D.getParser(FormDSubmissionSchema);
     const json = parser.parse(xml) as FormDSubmission;
     const rawFormD = json.edgarSubmission;
