@@ -10,7 +10,7 @@ import { EnvToDI } from "../config/EnvToDI";
 import { BootstrapAllCikNames } from "./BootstrapAllCikNames";
 import { BootstrapCikLastUpdate } from "./BootstrapCikLastUpdate";
 import { CompanyFacts } from "./CompanyFacts";
-import { CompanySubmissions } from "./CompanySubmissions";
+import { CompanySubmissions } from "./Submissions";
 import { AddDailyIndexCommands } from "./DailyIndex";
 import { SetupDB } from "./SetupDB";
 import { UpdateAllCompanyFacts } from "./UpdateAllCompanyFacts";

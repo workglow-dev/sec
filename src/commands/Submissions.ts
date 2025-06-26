@@ -14,7 +14,7 @@ import { secDate } from "../util/parseDate";
 
 export function CompanySubmissions(program: Command) {
   program
-    .command("company-submissions")
+    .command("submissions")
     .description("get the company submissions for a given date")
     .option("--date <date>", "cache buster")
     .argument("<cik>", "cik to get the company submissions for")
