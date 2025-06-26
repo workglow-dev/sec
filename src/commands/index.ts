@@ -20,6 +20,7 @@ import { UpdateAllSubmissions } from "./UpdateAllSubmissions";
 import { Form } from "./Form";
 import { Doc } from "./Doc";
 import { DefaultDI } from "../config/DefaultDI";
+import { UpdateAllForms } from "./UpdateAllForms";
 
 export const AddCommands = (program: Command) => {
   EnvToDI();
@@ -34,6 +35,7 @@ export const AddCommands = (program: Command) => {
   SetupDB(program);
   UpdateAllCompanyFacts(program);
   UpdateAllSubmissions(program);
+  UpdateAllForms(program);
   Form(program);
   Doc(program);
 };

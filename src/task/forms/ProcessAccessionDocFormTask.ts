@@ -97,16 +97,16 @@ export class ProcessAccessionDocFormTask extends Task<
         if (!formCls) throw new TaskError("Form not found");
         const result = await formCls.parse(text!);
         return { result };
+      },
+      async function storeProcessedFiling() {
+        const sql = `INSERT INTO processed_filings (cik, form, accession_number) VALUES ($cik, $form, $accession_number)`;
+        query_run(sql, {
+          $cik: cik!,
+          $form: form!,
+          $accession_number: accessionNumber,
+        });
+        return { success: true };
       }
-      // async function storeProcessedFiling() {
-      //   const sql = `INSERT INTO processed_filings (cik, form, accession_number) VALUES ($cik, $form, $accession_number)`;
-      //   query_run(sql, {
-      //     $cik: cik!,
-      //     $form: form!,
-      //     $accession_number: accessionNumber,
-      //   });
-      //   return { success: true };
-      // }
     );
 
     const result = await wf.run();
