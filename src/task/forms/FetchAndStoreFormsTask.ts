@@ -93,7 +93,7 @@ export class FetchAndStoreFormsTask extends Task<
           cik: cik,
           form: form,
           accessionNumber: filing.accession_number,
-          fileName: filing.primary_doc.replaceAll("xslFormDX01/", ""),
+          fileName: filing.primary_doc.replaceAll(/^(xsl[^\/]+\/)/g, ""),
         })
       );
     }
