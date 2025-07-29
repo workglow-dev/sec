@@ -136,6 +136,8 @@ The SEC API provides **Company Facts**, delivering structured and normalized fin
 
 **Special Purpose Acquisition Companies (SPACs)** are formed to raise capital from public investors with the intent to acquire a private company and take it public.
 
+See [SPACs](./src/storage/spac/README.md) for more information.
+
 ## Portals
 
 **Reg-A and Reg-CF Portals** facilitate investment in private companies by public investors through SEC-regulated platforms.
