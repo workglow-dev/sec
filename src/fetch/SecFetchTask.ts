@@ -5,7 +5,7 @@
 //    *   Licensed under the Apache License, Version 2.0 (the "License");           *
 //    *******************************************************************************
 
-import { JobQueueTaskConfig, TaskIO } from "@podley/task-graph";
+import { JobQueueTaskConfig, TaskOutput } from "@podley/task-graph";
 import { FetchTask, FetchTaskInput, FetchTaskOutput } from "@podley/tasks";
 import { SecJobQueueName, SecUserAgent } from "../config/Constants";
 import { SecFetchJob } from "./SecFetchJob";
@@ -15,7 +15,7 @@ import { SecFetchJob } from "./SecFetchJob";
  */
 export class SecFetchTask<
   Input extends FetchTaskInput = FetchTaskInput,
-  Output extends TaskIO = FetchTaskOutput,
+  Output extends TaskOutput = FetchTaskOutput,
   Config extends JobQueueTaskConfig = JobQueueTaskConfig
 > extends FetchTask<Input, Output, Config> {
   constructor(input: FetchTaskInput = {} as FetchTaskInput, config: Config = {} as Config) {
