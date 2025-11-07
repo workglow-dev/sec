@@ -18,26 +18,26 @@
     "dist"
   ],
   "dependencies": {
-    "@podley/cli": "0.0.10",
-    "@podley/job-queue": "0.0.10",
-    "@podley/sqlite": "0.0.10",
-    "@podley/storage": "0.0.10",
-    "@podley/task-graph": "0.0.10",
-    "@podley/tasks": "0.0.10",
-    "@podley/util": "0.0.10",
-    "@sinclair/typebox": "^0.34.33",
+    "@podley/cli": "0.0.32",
+    "@podley/job-queue": "0.0.32",
+    "@podley/sqlite": "0.0.32",
+    "@podley/storage": "0.0.32",
+    "@podley/task-graph": "0.0.32",
+    "@podley/tasks": "0.0.32",
+    "@podley/util": "0.0.32",
+    "@sinclair/typebox": "^0.34.41",
     "@sroussey/parse-address": "^2.4.2",
     "@sroussey/parse-full-name": "^2.0.0",
     "awesome-phonenumber": "^7.5.0",
-    "cheerio": "^1.0.0",
+    "cheerio": "^1.1.2",
     "cheerio-json-mapper": "^1.0.4",
-    "commander": "^14.0.0",
+    "commander": "^14.0.2",
     "compromise": "^14.14.4",
-    "concurrently": "^9.1.2",
+    "concurrently": "^9.2.1",
     "csv-parse": "^5.6.0",
-    "fast-xml-parser": "^5.2.3",
+    "fast-xml-parser": "^5.3.1",
     "html-entities": "^2.6.0",
-    "pdf2json": "^3.1.6",
+    "pdf2json": "^3.2.2",
     "words-to-numbers": "^1.5.1",
     "xml2js": "^0.6.2"
   },
@@ -51,6 +51,6 @@
   ],
   "private": true,
   "peerDependencies": {
-    "typescript": "^5"
+    "typescript": "^5.9.3"
   }
 }
