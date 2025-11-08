@@ -12,7 +12,7 @@ import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 
 // NOTE: accession documents are immutable, so we don't need to pass in a date for invalidation
 
-export interface SecFetchAccessionDocTaskInput {
+export interface SecFetchAccessionDocTaskInput extends TaskInput {
   cik: number;
   accessionNumber: string;
   fileName: string;

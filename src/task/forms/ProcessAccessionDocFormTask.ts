@@ -6,12 +6,12 @@
 //    *******************************************************************************
 
 import { IExecuteContext, Task, TaskError, Workflow } from "@podley/task-graph";
+import { FetchTaskOutput } from "@podley/tasks";
 import { Static, TObject, Type } from "@sinclair/typebox";
+import { ALL_FORMS_MAP } from "../../sec/forms/all-forms";
+import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { query_get, query_run } from "../../util/db";
 import { SecFetchAccessionDocTask } from "./SecFetchAccessionDocTask";
-import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
-import { FetchTaskOutput } from "@podley/tasks";
-import { ALL_FORMS_MAP } from "../../sec/forms/all-forms";
 
 const ProcessAccessionDocFormTaskInputSchema = () =>
   Type.Object({

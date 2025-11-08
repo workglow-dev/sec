@@ -5,7 +5,13 @@
 //    *   Licensed under the Apache License, Version 2.0 (the "License");           *
 //    *******************************************************************************
 
-import { IExecuteContext, NamedGraphResult, Task, TaskGraph } from "@podley/task-graph";
+import {
+  IExecuteContext,
+  GraphResult,
+  Task,
+  TaskGraph,
+  GRAPH_RESULT_ARRAY,
+} from "@podley/task-graph";
 import { FetchQuarterlyIndexTask, FetchQuarterlyIndexTaskOutput } from "./FetchQuarterlyIndexTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { TypeDateTime } from "@podley/util";
@@ -103,7 +109,8 @@ export class FetchQuarterlyIndexRangeTask extends Task<
       tasks.addTask(task);
     }
 
-    const results: NamedGraphResult<FetchQuarterlyIndexTaskOutput> = await tasks.run();
+    const results: GraphResult<FetchQuarterlyIndexTaskOutput, typeof GRAPH_RESULT_ARRAY> =
+      await tasks.run();
 
     const updateList: Record<number, string> = {};
     for (const result of results) {
