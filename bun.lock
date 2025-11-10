@@ -6,7 +6,7 @@
       "dependencies": {
         "@podley/cli": "0.0.32",
         "@podley/job-queue": "0.0.32",
-        "@podley/sqlite": "0.0.32",
+        "@podley/sqlite": "0.0.36",
         "@podley/storage": "0.0.32",
         "@podley/task-graph": "0.0.32",
         "@podley/tasks": "0.0.32",
@@ -111,7 +111,7 @@
 
     "@podley/job-queue": ["@podley/job-queue@0.0.32", "", { "peerDependencies": { "@podley/sqlite": "0.0.32", "@podley/storage": "0.0.32", "@podley/util": "0.0.32", "pg": "^8.16.3" } }, "sha512-mFnKbKCJ46KWjxvB3gu07Y7LphK2i8OIe9H3/3R42nnvbvvvZdF8e9nUmkHQU0jTM/+mVFPX6G5Ccw82cdhjmQ=="],
 
-    "@podley/sqlite": ["@podley/sqlite@0.0.32", "", { "peerDependencies": { "@sqlite.org/sqlite-wasm": "^3.50.4-build1", "better-sqlite3": "^12.4.1" } }, "sha512-fN+47yzxZhRyWCC1vgurwGD4Qs8bSC4751G8oe/5n20u3rLyVNJ0qpK8q89WyHe9tz0yXI4zFjFVXHLbcQwi1Q=="],
+    "@podley/sqlite": ["@podley/sqlite@0.0.36", "", { "peerDependencies": { "@sqlite.org/sqlite-wasm": "^3.50.4-build1", "better-sqlite3": "^12.4.1" } }, "sha512-KNgt58clyFQSEv2kKdEvx4m8rLjdFF1R3r3AxDD1Yno/UPOr/bxGfm+tuaWGPaKfdvqxKvBUzX0dnOZ0tFrayg=="],
 
     "@podley/storage": ["@podley/storage@0.0.32", "", { "peerDependencies": { "@podley/sqlite": "0.0.32", "@podley/util": "0.0.32", "@sinclair/typebox": "^0.34.41", "@supabase/supabase-js": "^2.74.0", "pg": "^8.16.3" } }, "sha512-mj1EXsnxMXM9+Fty4pSuDjT19gEnbMpOGYafIxdSAJzFQuFiYBCW0vzvMpdiHFEZIcCHK8hAaapVXXvcW7zARw=="],
 
