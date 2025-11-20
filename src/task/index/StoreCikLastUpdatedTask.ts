@@ -1,12 +1,11 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
-import { sleep, TypeDateTime } from "@podley/util";
+import { DataPortSchemaObject, sleep } from "@podley/util";
 import { TObject, Type } from "@sinclair/typebox";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { query_run } from "../../util/db";
@@ -31,16 +30,14 @@ export class StoreCikLastUpdatedTask extends Task<
   static readonly category = "SEC";
   static readonly cacheable = false;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return Type.Object({
       updateList: Type.Array(Type.Tuple([TypeSecCik(), TypeSecDate()])),
-    });
+    }) as DataPortSchemaObject;
   }
 
-  public static outputSchema(): TObject {
-    return Type.Object({
-      success: Type.Boolean(),
-    });
+  public static outputSchema() {
+    return Type.Object({ success: Type.Boolean() }) as DataPortSchemaObject;
   }
 
   async execute(

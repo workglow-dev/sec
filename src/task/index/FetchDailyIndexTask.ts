@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task } from "@podley/task-graph";
 import { TObject, Type } from "@sinclair/typebox";
@@ -35,7 +34,7 @@ class SecFetchDailyIndexTask extends SecCachedFetchTask<FetchDailyIndexTaskInput
 
   response_type: response_type = "text";
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return Type.Object({
       date: TypeSecDate({
         title: "Date",
@@ -63,7 +62,7 @@ export class FetchDailyIndexTask extends Task<FetchDailyIndexTaskInput, FetchDai
   static readonly category = "SEC";
   static readonly cacheable = true;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return Type.Object({
       date: TypeOptionalSecDate({
         title: "Date",
@@ -72,7 +71,7 @@ export class FetchDailyIndexTask extends Task<FetchDailyIndexTaskInput, FetchDai
     });
   }
 
-  public static outputSchema(): TObject {
+  public static outputSchema() {
     return Type.Object({
       updateList: Type.Array(Type.Tuple([TypeSecCik(), TypeSecDate()])),
     });

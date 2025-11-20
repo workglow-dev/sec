@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
 import { Static, TObject, Type } from "@sinclair/typebox";
@@ -11,6 +10,7 @@ import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { CompanyFacts, Factoid, FactoidSchema } from "../../sec/facts/CompanyFacts";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { secDate, TypeOptionalSecDate } from "../../util/parseDate";
+import { DataPortSchemaObject } from "@podley/util";
 
 // NOTE: company facts are mutable, so we need to pass in a date to break the cache
 
@@ -35,8 +35,8 @@ class SecFetchCompanyFactsTask extends SecCachedFetchTask<FetchCompanyFactsTaskI
   static readonly category = "Hidden";
   static readonly immutable = false;
 
-  public static inputSchema(): TObject {
-    return FetchCompanyFactsTaskInput();
+  public static inputSchema() {
+    return FetchCompanyFactsTaskInput() as DataPortSchemaObject;
   }
 
   inputToFileName(input: FetchCompanyFactsTaskInput): string {
@@ -61,11 +61,11 @@ export class FetchCompanyFactsTask extends Task<
   static readonly category = "SEC";
   static readonly cacheable = true;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return FetchCompanyFactsTaskInput();
   }
 
-  public static outputSchema(): TObject {
+  public static outputSchema() {
     return FetchCompanyFactsTaskOutput();
   }
 

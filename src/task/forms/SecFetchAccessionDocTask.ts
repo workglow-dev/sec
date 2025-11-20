@@ -1,14 +1,14 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TaskInput } from "@podley/task-graph";
 import { TObject, Type } from "@sinclair/typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
+import { DataPortSchemaObject } from "@podley/util";
 
 // NOTE: accession documents are immutable, so we don't need to pass in a date for invalidation
 
@@ -27,7 +27,7 @@ export class SecFetchAccessionDocTask extends SecCachedFetchTask<SecFetchAccessi
   static readonly category = "Hidden";
   static readonly immutable = true;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return Type.Object({
       cik: TypeSecCik(),
       accessionNumber: Type.String({
@@ -38,7 +38,7 @@ export class SecFetchAccessionDocTask extends SecCachedFetchTask<SecFetchAccessi
         title: "File Name",
         description: "The name of the document to fetch",
       }),
-    });
+    }) as DataPortSchemaObject;
   }
 
   inputToFileName(input: SecFetchAccessionDocTaskInput): string {

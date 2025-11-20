@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { InMemoryTabularRepository } from "@podley/storage";
@@ -15,17 +14,20 @@ import {
   AddressSchema,
   AddressPrimaryKeyNames,
   AddressJunctionPrimaryKeyNames,
+  AddressesEntityJunction,
 } from "./AddressSchema";
 
 describe("AddressRepo", () => {
   let addressRepo: AddressRepo;
   let addressStorage: InMemoryTabularRepository<
     typeof AddressSchema,
-    typeof AddressPrimaryKeyNames
+    typeof AddressPrimaryKeyNames,
+    Address
   >;
   let addressJunctionStorage: InMemoryTabularRepository<
     typeof AddressesEntityJunctionSchema,
-    typeof AddressJunctionPrimaryKeyNames
+    typeof AddressJunctionPrimaryKeyNames,
+    AddressesEntityJunction
   >;
 
   const mockAddressImport: Readonly<AddressImport> = {
@@ -40,7 +42,11 @@ describe("AddressRepo", () => {
   const mockAddress: Address = normalizeAddress(mockAddressImport)!;
 
   beforeEach(() => {
-    addressStorage = new InMemoryTabularRepository(AddressSchema, AddressPrimaryKeyNames, ["city"]);
+    addressStorage = new InMemoryTabularRepository<
+      typeof AddressSchema,
+      typeof AddressPrimaryKeyNames,
+      Address
+    >(AddressSchema, AddressPrimaryKeyNames, ["city"]);
 
     addressJunctionStorage = new InMemoryTabularRepository(
       AddressesEntityJunctionSchema,

@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskError, Workflow } from "@podley/task-graph";
 import { FetchTaskOutput } from "@podley/tasks";
@@ -55,11 +54,11 @@ export class ProcessAccessionDocFormTask extends Task<
   static readonly category = "SEC";
   static readonly cacheable = true;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return ProcessAccessionDocFormTaskInputSchema();
   }
 
-  static outputSchema(): TObject {
+  static outputSchema() {
     return ProcessAccessionDocFormTaskOutputSchema();
   }
 

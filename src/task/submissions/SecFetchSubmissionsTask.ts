@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { Static, TObject, Type } from "@sinclair/typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
@@ -12,6 +11,7 @@ import {
   TypeSecCik,
 } from "../../sec/submissions/EnititySubmissionSchema";
 import { TypeOptionalSecDate } from "../../util/parseDate";
+import { DataPortSchemaObject } from "@podley/util";
 
 // NOTE: company submissions are mutable, so we need to pass in a date to break the cache
 
@@ -43,12 +43,12 @@ export class SecFetchSubmissionsTask extends SecCachedFetchTask<
   static readonly category = "Hidden";
   static readonly immutable = false;
 
-  public static inputSchema(): TObject {
-    return SecFetchSubmissionsTaskInputSchema();
+  public static inputSchema() {
+    return SecFetchSubmissionsTaskInputSchema() as DataPortSchemaObject;
   }
 
-  public static outputSchema(): TObject {
-    return SecFetchSubmissionsTaskOutputSchema();
+  public static outputSchema() {
+    return SecFetchSubmissionsTaskOutputSchema() as DataPortSchemaObject;
   }
 
   inputToFileName(input: SecFetchSubmissionsTaskInput): string {

@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
 import { beforeEach, describe, expect, it } from "bun:test";
@@ -19,22 +18,33 @@ import {
   CompanyEntityJunctionPrimaryKeyNames,
   CompanyPhoneJunctionPrimaryKeyNames,
   CompanyPrimaryKeyNames,
+  CompaniesEntityJunction,
+  CompaniesAddressJunction,
+  CompanyPhoneJunction,
+  Company,
 } from "./CompanySchema";
 
 describe("CompanyRepo", () => {
   let companyRepo: CompanyRepo;
-  let companyStorage: TabularRepository<typeof CompanySchema, typeof CompanyPrimaryKeyNames>;
+  let companyStorage: TabularRepository<
+    typeof CompanySchema,
+    typeof CompanyPrimaryKeyNames,
+    Company
+  >;
   let companyJunctionStorage: TabularRepository<
     typeof CompaniesEntityJunctionSchema,
-    typeof CompanyEntityJunctionPrimaryKeyNames
+    typeof CompanyEntityJunctionPrimaryKeyNames,
+    CompaniesEntityJunction
   >;
   let companyAddressJunctionStorage: TabularRepository<
     typeof CompaniesAddressJunctionSchema,
-    typeof CompanyAddressJunctionPrimaryKeyNames
+    typeof CompanyAddressJunctionPrimaryKeyNames,
+    CompaniesAddressJunction
   >;
   let companyPhoneJunctionStorage: TabularRepository<
     typeof CompanyPhoneJunctionSchema,
-    typeof CompanyPhoneJunctionPrimaryKeyNames
+    typeof CompanyPhoneJunctionPrimaryKeyNames,
+    CompanyPhoneJunction
   >;
 
   // Mock data

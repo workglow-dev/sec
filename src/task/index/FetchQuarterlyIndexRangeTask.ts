@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import {
   IExecuteContext,
@@ -14,7 +13,7 @@ import {
 } from "@podley/task-graph";
 import { FetchQuarterlyIndexTask, FetchQuarterlyIndexTaskOutput } from "./FetchQuarterlyIndexTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
-import { TypeDateTime } from "@podley/util";
+import { TypeDateTime } from "../../util/TypeBoxUtil";
 import { Static, TObject, Type } from "@sinclair/typebox";
 
 // NOTE: ONLY PREVIOUS QUARTERS' master index are immutable, current one is not (though should switch to daily)
@@ -67,11 +66,11 @@ export class FetchQuarterlyIndexRangeTask extends Task<
   static readonly category = "SEC";
   static readonly cacheable = true;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return FetchQuarterlyIndexRangeTaskInputSchema();
   }
 
-  public static outputSchema(): TObject {
+  public static outputSchema() {
     return Type.Object({
       updateList: Type.Array(Type.Tuple([TypeSecCik(), TypeDateTime()])),
     });

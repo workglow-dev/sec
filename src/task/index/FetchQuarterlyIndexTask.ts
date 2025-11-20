@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
 import { TObject, Type } from "@sinclair/typebox";
@@ -17,6 +16,7 @@ import {
 } from "../../util/parseDate";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { parse } from "csv-parse";
+import { DataPortSchemaObject } from "@podley/util";
 
 // NOTE: ONLY PREVIOUS QUARTYS master index are immutable, current one is not (though should switch to daily)
 
@@ -35,13 +35,13 @@ class SecFetchQuarterlyIndexTask extends SecCachedFetchTask<FetchQuarterlyIndexT
 
   response_type: response_type = "text";
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return Type.Object({
       date: TypeOptionalSecDate({
         title: "Date",
         description: "The date to fetch the quarterly index for",
       }),
-    });
+    }) as DataPortSchemaObject;
   }
 
   inputToFileName(input: FetchQuarterlyIndexTaskInput): string {
@@ -64,19 +64,19 @@ export class FetchQuarterlyIndexTask extends Task<
   static readonly category = "SEC";
   static readonly cacheable = true;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return Type.Object({
       date: TypeOptionalSecDate({
         title: "Date",
         description: "The date to fetch the quarterly index for",
       }),
-    });
+    }) as DataPortSchemaObject;
   }
 
-  public static outputSchema(): TObject {
+  public static outputSchema() {
     return Type.Object({
       updateList: Type.Array(Type.Tuple([TypeSecCik(), TypeSecDate()])),
-    });
+    }) as DataPortSchemaObject;
   }
 
   async execute(

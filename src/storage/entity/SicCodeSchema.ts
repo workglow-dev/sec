@@ -1,13 +1,13 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
-import { createServiceToken, TypeNullable } from "@podley/util";
+import { createServiceToken } from "@podley/util";
 import { Static, Type } from "@sinclair/typebox";
+import { TypeNullable } from "../../util/TypeBoxUtil";
 
 /**
  * SIC Code schema - represents Standard Industrial Classification codes
@@ -33,7 +33,8 @@ export type SicCode = Static<typeof SicCodeSchema>;
 export const SicCodePrimaryKeyNames = ["sic"] as const;
 export type SicCodeRepositoryStorage = TabularRepository<
   typeof SicCodeSchema,
-  typeof SicCodePrimaryKeyNames
+  typeof SicCodePrimaryKeyNames,
+  SicCode
 >;
 
 /**

@@ -1,13 +1,13 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
-import { createServiceToken, TypeNullable } from "@podley/util";
+import { createServiceToken } from "@podley/util";
 import { Static, Type } from "@sinclair/typebox";
+import { TypeNullable } from "../../util/TypeBoxUtil";
 import { ISO_COUNTRY_CODE_ARRAY, SEC_STATE_CODE_ARRAY } from "./AddressSchemaCodes";
 
 export const STATE_COUNTRY_CODE = Type.Union(
@@ -42,7 +42,8 @@ export type Address = Static<typeof AddressSchema>;
 export const AddressPrimaryKeyNames = ["address_hash_id"] as const;
 export type AddressRepositoryStorage = TabularRepository<
   typeof AddressSchema,
-  typeof AddressPrimaryKeyNames
+  typeof AddressPrimaryKeyNames,
+  Address
 >;
 
 /**
@@ -75,7 +76,8 @@ export type AddressesEntityJunction = Static<typeof AddressesEntityJunctionSchem
 export const AddressJunctionPrimaryKeyNames = ["address_hash_id", "relation_name", "cik"] as const;
 export type AddressJunctionRepositoryStorage = TabularRepository<
   typeof AddressesEntityJunctionSchema,
-  typeof AddressJunctionPrimaryKeyNames
+  typeof AddressJunctionPrimaryKeyNames,
+  AddressesEntityJunction
 >;
 
 export const ADDRESS_JUNCTION_REPOSITORY_TOKEN =

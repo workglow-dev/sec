@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
 import { createServiceToken } from "@podley/util";
@@ -54,7 +53,8 @@ export type Phone = Static<typeof PhoneSchema>;
 export const PhonePrimaryKeyNames = ["international_number"] as const;
 export type PhoneRepositoryStorage = TabularRepository<
   typeof PhoneSchema,
-  typeof PhonePrimaryKeyNames
+  typeof PhonePrimaryKeyNames,
+  Phone
 >;
 
 /**
@@ -88,7 +88,8 @@ export const PhoneEntityJunctionPrimaryKeyNames = [
 ] as const;
 export type PhoneEntityJunctionRepositoryStorage = TabularRepository<
   typeof PhonesEntityJunctionSchema,
-  typeof PhoneEntityJunctionPrimaryKeyNames
+  typeof PhoneEntityJunctionPrimaryKeyNames,
+  PhonesEntityJunction
 >;
 
 export const PHONE_ENTITY_JUNCTION_REPOSITORY_TOKEN =

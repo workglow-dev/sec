@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, TaskConfig, TaskOutput } from "@podley/task-graph";
 import { FetchTaskInput, FetchTaskOutput } from "@podley/tasks";
@@ -71,6 +70,14 @@ export abstract class SecCachedFetchTask<
   static category = "Hidden";
   static cacheable = true;
   static immutable = false;
+
+  static inputSchema() {
+    return {} as any;
+  }
+
+  static outputSchema() {
+    return {} as any;
+  }
 
   abstract inputToFileName(input: I): string;
   abstract inputToUrl(input: I): string;

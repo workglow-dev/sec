@@ -1,16 +1,18 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { JobQueueTaskConfig } from "@podley/task-graph";
-import { FetchJob, FetchTaskInput } from "@podley/tasks";
+import { FetchJob, FetchTaskInput, FetchTaskOutput } from "@podley/tasks";
 import { SecUserAgent } from "../config/Constants";
 
-export class SecFetchJob extends FetchJob {
-  constructor(config: JobQueueTaskConfig & { input: FetchTaskInput }) {
+export class SecFetchJob<
+  Input extends FetchTaskInput = FetchTaskInput,
+  Output = FetchTaskOutput
+> extends FetchJob<Input, Output> {
+  constructor(config: JobQueueTaskConfig & { input: Input }) {
     // Set SEC-specific headers
     config.input.headers = {
       "User-Agent": SecUserAgent,

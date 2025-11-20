@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
 import { Static, TObject, Type } from "@sinclair/typebox";
@@ -11,6 +10,7 @@ import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { SecFetchTask } from "../../fetch/SecFetchTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { TypeSecDate } from "../../util/parseDate";
+import { DataPortSchemaObject } from "@podley/util";
 
 // NOTE: cik names are mutable, so we use date to break the cache
 
@@ -37,8 +37,8 @@ export class SecFetchCikLookupTask extends SecCachedFetchTask<
   static readonly category = "Hidden";
   static readonly immutable = true;
 
-  public static inputSchema(): TObject {
-    return FetchAllCikNamesTaskInputSchema();
+  public static inputSchema() {
+    return FetchAllCikNamesTaskInputSchema() as DataPortSchemaObject;
   }
 
   inputToFileName(input: FetchAllCikNamesTaskInput): string {
@@ -60,12 +60,12 @@ export class FetchAllCikNamesTask extends Task<
   static readonly cacheable = true;
   static readonly compoundMerge = "last";
 
-  public static inputSchema(): TObject {
-    return FetchAllCikNamesTaskInputSchema();
+  public static inputSchema() {
+    return FetchAllCikNamesTaskInputSchema() as DataPortSchemaObject;
   }
 
-  public static outputSchema(): TObject {
-    return FetchAllCikNamesTaskOutputSchema();
+  public static outputSchema() {
+    return FetchAllCikNamesTaskOutputSchema() as DataPortSchemaObject;
   }
 
   async execute(

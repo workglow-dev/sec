@@ -1,15 +1,15 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
 import { query_run } from "../../util/db";
 import { FetchAllCikNamesTask, FetchAllCikNamesTaskOutput } from "./FetchAllCikNamesTask";
 import { TObject, Type } from "@sinclair/typebox";
 import { EntityRepo } from "../../storage/entity/EntityRepo";
+import { DataPortSchemaObject } from "@podley/util";
 
 export type StoreCikNamesTaskOutput = {
   success: boolean;
@@ -23,14 +23,12 @@ export class StoreCikNamesTask extends Task<FetchAllCikNamesTaskOutput, StoreCik
   static readonly category = "SEC";
   static readonly cacheable = false;
 
-  public static inputSchema(): TObject {
-    return FetchAllCikNamesTask.inputSchema();
+  public static inputSchema() {
+    return FetchAllCikNamesTask.inputSchema() as DataPortSchemaObject;
   }
 
-  public static outputSchema(): TObject {
-    return Type.Object({
-      success: Type.Boolean(),
-    });
+  public static outputSchema() {
+    return Type.Object({ success: Type.Boolean() }) as DataPortSchemaObject;
   }
 
   async execute(

@@ -1,13 +1,13 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
-import { createServiceToken, TypeNullable } from "@podley/util";
+import { createServiceToken } from "@podley/util";
 import { Static, Type } from "@sinclair/typebox";
+import { TypeNullable } from "../../util/TypeBoxUtil";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 
 /**
@@ -100,7 +100,8 @@ export type InvestmentOffering = Static<typeof InvestmentOfferingSchema>;
 export const InvestmentOfferingPrimaryKeyNames = ["cik", "file_number"] as const;
 export type InvestmentOfferingRepositoryStorage = TabularRepository<
   typeof InvestmentOfferingSchema,
-  typeof InvestmentOfferingPrimaryKeyNames
+  typeof InvestmentOfferingPrimaryKeyNames,
+  InvestmentOffering
 >;
 
 /**

@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import {
   Dataflow,
@@ -49,11 +48,11 @@ export class FetchSubmissionsTask extends Task<FetchSubmissionsTaskInput, FetchS
   static readonly category = "SEC";
   static readonly cacheable = true;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return FetchSubmissionsTaskInputSchema();
   }
 
-  public static outputSchema(): TObject {
+  public static outputSchema() {
     return FetchSubmissionsTaskOutputSchema();
   }
 

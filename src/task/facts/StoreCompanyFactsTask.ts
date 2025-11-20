@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskAbortedError, TaskError } from "@podley/task-graph";
 import { TObject, Type } from "@sinclair/typebox";
@@ -28,11 +27,11 @@ export class StoreCompanyFactsTask extends Task<
   static readonly category = "SEC";
   static readonly cacheable = false;
 
-  public static inputSchema(): TObject {
+  public static inputSchema() {
     return FetchCompanyFactsTask.outputSchema();
   }
 
-  public static outputSchema(): TObject {
+  public static outputSchema() {
     return Type.Object({
       success: Type.Boolean(),
     });

@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
 import { createServiceToken } from "@podley/util";
@@ -35,7 +34,8 @@ export type EntityTicker = Static<typeof EntityTickerSchema>;
 export const EntityTickerPrimaryKeyNames = ["cik", "ticker", "exchange"] as const;
 export type EntityTickerRepositoryStorage = TabularRepository<
   typeof EntityTickerSchema,
-  typeof EntityTickerPrimaryKeyNames
+  typeof EntityTickerPrimaryKeyNames,
+  EntityTicker
 >;
 
 /**

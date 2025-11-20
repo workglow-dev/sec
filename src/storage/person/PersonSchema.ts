@@ -1,13 +1,13 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
-import { createServiceToken, TypeNullable } from "@podley/util";
+import { createServiceToken } from "@podley/util";
 import { Static, Type } from "@sinclair/typebox";
+import { TypeNullable } from "../../util/TypeBoxUtil";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 
 /**
@@ -53,7 +53,8 @@ export type Person = Static<typeof PersonSchema>;
 export const PersonPrimaryKeyNames = ["person_hash_id"] as const;
 export type PersonRepositoryStorage = TabularRepository<
   typeof PersonSchema,
-  typeof PersonPrimaryKeyNames
+  typeof PersonPrimaryKeyNames,
+  Person
 >;
 
 /**
@@ -92,7 +93,8 @@ export const PersonEntityJunctionPrimaryKeyNames = [
 ] as const;
 export type PersonEntityJunctionRepositoryStorage = TabularRepository<
   typeof PersonsEntityJunctionSchema,
-  typeof PersonEntityJunctionPrimaryKeyNames
+  typeof PersonEntityJunctionPrimaryKeyNames,
+  PersonsEntityJunction
 >;
 
 export const PERSON_ENTITY_JUNCTION_REPOSITORY_TOKEN =
@@ -124,7 +126,8 @@ export const PersonAddressJunctionPrimaryKeyNames = [
 ] as const;
 export type PersonAddressJunctionRepositoryStorage = TabularRepository<
   typeof PersonsAddressJunctionSchema,
-  typeof PersonAddressJunctionPrimaryKeyNames
+  typeof PersonAddressJunctionPrimaryKeyNames,
+  PersonsAddressJunction
 >;
 
 export const PERSON_ADDRESS_JUNCTION_REPOSITORY_TOKEN =
@@ -156,7 +159,8 @@ export const PersonPhoneJunctionPrimaryKeyNames = [
 ] as const;
 export type PersonPhoneJunctionRepositoryStorage = TabularRepository<
   typeof PersonPhoneJunctionSchema,
-  typeof PersonPhoneJunctionPrimaryKeyNames
+  typeof PersonPhoneJunctionPrimaryKeyNames,
+  PersonPhoneJunction
 >;
 
 export const PERSON_PHONE_JUNCTION_REPOSITORY_TOKEN =
@@ -194,7 +198,8 @@ export const PersonPreviousNamesPrimaryKeyNames = [
 ] as const;
 export type PersonPreviousNamesRepositoryStorage = TabularRepository<
   typeof PersonPreviousNamesSchema,
-  typeof PersonPreviousNamesPrimaryKeyNames
+  typeof PersonPreviousNamesPrimaryKeyNames,
+  PersonPreviousNames
 >;
 
 export const PERSON_PREVIOUS_NAMES_REPOSITORY_TOKEN =

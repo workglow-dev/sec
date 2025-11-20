@@ -1,13 +1,13 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
-import { createServiceToken, TypeNullable } from "@podley/util";
+import { createServiceToken } from "@podley/util";
 import { Static, Type } from "@sinclair/typebox";
+import { TypeNullable } from "../../util/TypeBoxUtil";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 
 /**
@@ -40,7 +40,8 @@ export type Company = Static<typeof CompanySchema>;
 export const CompanyPrimaryKeyNames = ["company_hash_id"] as const;
 export type CompanyRepositoryStorage = TabularRepository<
   typeof CompanySchema,
-  typeof CompanyPrimaryKeyNames
+  typeof CompanyPrimaryKeyNames,
+  Company
 >;
 
 /**
@@ -79,7 +80,8 @@ export const CompanyEntityJunctionPrimaryKeyNames = [
 ] as const;
 export type CompanyEntityJunctionRepositoryStorage = TabularRepository<
   typeof CompaniesEntityJunctionSchema,
-  typeof CompanyEntityJunctionPrimaryKeyNames
+  typeof CompanyEntityJunctionPrimaryKeyNames,
+  CompaniesEntityJunction
 >;
 
 export const COMPANY_ENTITY_JUNCTION_REPOSITORY_TOKEN =
@@ -111,7 +113,8 @@ export const CompanyAddressJunctionPrimaryKeyNames = [
 ] as const;
 export type CompanyAddressJunctionRepositoryStorage = TabularRepository<
   typeof CompaniesAddressJunctionSchema,
-  typeof CompanyAddressJunctionPrimaryKeyNames
+  typeof CompanyAddressJunctionPrimaryKeyNames,
+  CompaniesAddressJunction
 >;
 
 export const COMPANY_ADDRESS_JUNCTION_REPOSITORY_TOKEN =
@@ -143,7 +146,8 @@ export const CompanyPhoneJunctionPrimaryKeyNames = [
 ] as const;
 export type CompanyPhoneJunctionRepositoryStorage = TabularRepository<
   typeof CompanyPhoneJunctionSchema,
-  typeof CompanyPhoneJunctionPrimaryKeyNames
+  typeof CompanyPhoneJunctionPrimaryKeyNames,
+  CompanyPhoneJunction
 >;
 
 export const COMPANY_PHONE_JUNCTION_REPOSITORY_TOKEN =
@@ -181,7 +185,8 @@ export const CompanyPreviousNamesPrimaryKeyNames = [
 ] as const;
 export type CompanyPreviousNamesRepositoryStorage = TabularRepository<
   typeof CompanyPreviousNamesSchema,
-  typeof CompanyPreviousNamesPrimaryKeyNames
+  typeof CompanyPreviousNamesPrimaryKeyNames,
+  CompanyPreviousNames
 >;
 
 export const COMPANY_PREVIOUS_NAMES_REPOSITORY_TOKEN =

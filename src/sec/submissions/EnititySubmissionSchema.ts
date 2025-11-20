@@ -1,12 +1,12 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { Static, Type, FormatRegistry } from "@sinclair/typebox";
-import { ArrayToObject, TypeNullable } from "@podley/util";
+import { ArrayToObject } from "@podley/util";
+import { TypeNullable } from "../../util/TypeBoxUtil";
 import { ALL_FORM_NAMES } from "../forms/all-forms";
 
 // const TypeSECForm = () => Type.Union(ALL_FORM_NAMES.map((f) => Type.Literal(f)));

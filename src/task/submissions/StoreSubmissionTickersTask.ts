@@ -1,9 +1,8 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { IExecuteContext, Task, TaskAbortedError, TaskError } from "@podley/task-graph";
 import { TObject, Type } from "@sinclair/typebox";
@@ -23,11 +22,11 @@ export class StoreSubmissionTickersTask extends Task<
   static readonly category = "SEC";
   static readonly cacheable = false;
 
-  static inputSchema(): TObject {
+  static inputSchema() {
     return FetchSubmissionsTask.outputSchema();
   }
 
-  static outputSchema(): TObject {
+  static outputSchema() {
     return Type.Object({
       success: Type.Boolean({ title: "Successful" }),
     });

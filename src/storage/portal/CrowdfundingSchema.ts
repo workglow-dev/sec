@@ -1,13 +1,13 @@
-//    *******************************************************************************
-//    *   PODLEY.AI: Your Agentic AI library                                        *
-//    *                                                                             *
-//    *   Copyright Steven Roussey <sroussey@gmail.com>                             *
-//    *   Licensed under the Apache License, Version 2.0 (the "License");           *
-//    *******************************************************************************
+/**
+ * @license
+ * Copyright 2025 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
 
 import { TabularRepository } from "@podley/storage";
-import { createServiceToken, TypeNullable } from "@podley/util";
+import { createServiceToken } from "@podley/util";
 import { Static, Type } from "@sinclair/typebox";
+import { TypeNullable } from "../../util/TypeBoxUtil";
 
 /**
  * Crowdfunding schema - represents crowdfunding entities
@@ -63,7 +63,8 @@ export type Crowdfunding = Static<typeof CrowdfundingSchema>;
 export const CrowdfundingPrimaryKeyNames = ["cik", "file_number"] as const;
 export type CrowdfundingRepositoryStorage = TabularRepository<
   typeof CrowdfundingSchema,
-  typeof CrowdfundingPrimaryKeyNames
+  typeof CrowdfundingPrimaryKeyNames,
+  Crowdfunding
 >;
 
 /**
@@ -169,7 +170,8 @@ export type CrowdfundingOfferings = Static<typeof CrowdfundingOfferingsSchema>;
 export const CrowdfundingOfferingsPrimaryKeyNames = ["cik", "file_number", "filing_date"] as const;
 export type CrowdfundingOfferingsRepositoryStorage = TabularRepository<
   typeof CrowdfundingOfferingsSchema,
-  typeof CrowdfundingOfferingsPrimaryKeyNames
+  typeof CrowdfundingOfferingsPrimaryKeyNames,
+  CrowdfundingOfferings
 >;
 
 export const CROWDFUNDING_OFFERINGS_REPOSITORY_TOKEN =
@@ -218,7 +220,8 @@ export const CrowdfundingReportsPrimaryKeyNames = [
 ] as const;
 export type CrowdfundingReportsRepositoryStorage = TabularRepository<
   typeof CrowdfundingReportsSchema,
-  typeof CrowdfundingReportsPrimaryKeyNames
+  typeof CrowdfundingReportsPrimaryKeyNames,
+  CrowdfundingReports
 >;
 
 export const CROWDFUNDING_REPORTS_REPOSITORY_TOKEN =
