@@ -18,13 +18,13 @@
     "dist"
   ],
   "dependencies": {
-    "@podley/cli": "0.0.43",
-    "@podley/job-queue": "0.0.43",
-    "@podley/sqlite": "0.0.43",
-    "@podley/storage": "0.0.43",
-    "@podley/task-graph": "0.0.43",
-    "@podley/tasks": "0.0.43",
-    "@podley/util": "0.0.43",
+    "@podley/cli": "0.0.44",
+    "@podley/job-queue": "0.0.44",
+    "@podley/sqlite": "0.0.44",
+    "@podley/storage": "0.0.44",
+    "@podley/task-graph": "0.0.44",
+    "@podley/tasks": "0.0.44",
+    "@podley/util": "0.0.44",
     "@sroussey/parse-address": "^2.4.2",
     "@sroussey/parse-full-name": "^2.0.0",
     "awesome-phonenumber": "^7.6.0",
@@ -44,7 +44,7 @@
   "devDependencies": {
     "@types/csv-parse": "^1.2.5",
     "@types/xml2js": "^0.4.14",
-    "@types/bun": "1.3.2"
+    "@types/bun": "1.3.3"
   },
   "trustedDependencies": [
     "onnxruntime-node"
