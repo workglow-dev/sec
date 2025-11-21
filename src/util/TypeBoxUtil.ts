@@ -42,10 +42,20 @@ export class TypeStringEnumType<T extends string[] | readonly string[]> extends 
     super();
     this.enum = values;
     Object.assign(this, annotations);
+    // create a non-enumerable property called annotations
+    Object.defineProperty(this, "annotations", {
+      value: annotations,
+      enumerable: false,
+    });
   }
 
   public Check(value: unknown): value is T[number] {
     return typeof value === "string" && this.enum.includes(value);
+  }
+
+  public Clone(): TypeStringEnumType<T> {
+    // @ts-expect-error - annotations is not a property of TypeStringEnumType
+    return new TypeStringEnumType(this.enum, this.annotations);
   }
 }
 
