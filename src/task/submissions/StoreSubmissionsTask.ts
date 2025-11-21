@@ -12,7 +12,7 @@ import {
   Workflow,
   parallel,
 } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { todayYYYYdMMdDD } from "../../util/dataCleaningUtils";
 import { FetchSubmissionsOutput, FetchSubmissionsTask } from "./FetchSubmissionsTask";
 import { StoreSubmissionContactInfoTask } from "./StoreSubmissionContactInfoTask";

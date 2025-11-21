@@ -5,7 +5,7 @@
  */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { response_type, SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import {
   parseDate,

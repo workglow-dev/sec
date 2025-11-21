@@ -7,7 +7,7 @@
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
 import { query_run } from "../../util/db";
 import { FetchAllCikNamesTask, FetchAllCikNamesTaskOutput } from "./FetchAllCikNamesTask";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { EntityRepo } from "../../storage/entity/EntityRepo";
 import { DataPortSchemaObject } from "@podley/util";
 

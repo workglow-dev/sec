@@ -6,7 +6,7 @@
 
 import { TabularRepository } from "@podley/storage";
 import { createServiceToken } from "@podley/util";
-import { Static, Type } from "@sinclair/typebox";
+import { Static, Type } from "typebox";
 
 /**
  * Entity Ticker schema - represents stock tickers and exchanges for entities

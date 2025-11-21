@@ -6,7 +6,7 @@
 
 import { IExecuteContext, Task, TaskAbortedError, TaskError } from "@podley/task-graph";
 import { objectOfArraysAsArrayOfObjects, sleep } from "@podley/util";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { Filings } from "../../sec/submissions/EnititySubmissionSchema";
 import { FetchSubmissionsOutput, FetchSubmissionsTask } from "./FetchSubmissionsTask";
 import { EntityRepo } from "../../storage/entity/EntityRepo";

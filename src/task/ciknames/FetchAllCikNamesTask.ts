@@ -5,7 +5,7 @@
  */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
-import { Static, TObject, Type } from "@sinclair/typebox";
+import { Static, TObject, Type } from "typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { SecFetchTask } from "../../fetch/SecFetchTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";

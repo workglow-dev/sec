@@ -5,7 +5,7 @@
  */
 
 import { IExecuteContext, Task, TaskAbortedError, TaskError } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { EntityRepo } from "../../storage/entity/EntityRepo";
 import type { Entity } from "../../storage/entity/EntitySchema";
 import { FetchSubmissionsOutput, FetchSubmissionsTask } from "./FetchSubmissionsTask";

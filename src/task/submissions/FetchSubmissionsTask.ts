@@ -13,8 +13,8 @@ import {
   Workflow,
 } from "@podley/task-graph";
 import { FetchTaskOutput } from "@podley/tasks";
-import { Static, TObject, Type } from "@sinclair/typebox";
-import { Value } from "@sinclair/typebox/value";
+import { Static, TObject, Type } from "typebox";
+import { Value } from "typebox/value";
 import {
   CompanySubmissionSchema,
   Filings,

@@ -1,4 +1,4 @@
-import { Kind, type TSchema, Type, TypeRegistry } from "@sinclair/typebox";
+import { type TSchema, Type } from "typebox";
 
 /**
  * Creates a nullable type by wrapping the given type in a union with null.
@@ -16,8 +16,8 @@ export const TypeOptionalArray = <T extends TSchema>(
   annotations: Record<string, unknown> = {}
 ) =>
   Type.Union([type, Type.Array(type)], {
-    title: type.title,
-    description: type.description,
+    title: (type as any).title as string | undefined,
+    description: (type as any).description as string | undefined,
     ...annotations,
   });
 
@@ -28,17 +28,28 @@ export const TypeDate = (annotations: Record<string, unknown> = {}) =>
   Type.String({ format: "date", ...annotations });
 
 export const TypeBlob = (annotations: Record<string, unknown> = {}) =>
-  Type.Transform(Type.Any({ contentEncoding: "blob", ...annotations }))
+  Type.Codec(Type.Any({ contentEncoding: "blob", ...annotations }))
     .Decode((value: unknown) => value as Uint8Array)
     .Encode((value: Uint8Array) => Buffer.from(value));
 
-TypeRegistry.Set("TypeStringEnum", (schema: { enum: string[] }, value: unknown) => {
-  return typeof value === "string" && schema.enum.includes(value);
-});
+export class TypeStringEnumType<T extends string[] | readonly string[]> extends Type.Base<
+  T[number]
+> {
+  public readonly type = "string";
+  public readonly enum: T;
 
-export const TypeStringEnum = <T extends string[]>(values: [...T]) =>
-  Type.Unsafe<T[number]>({
-    [Kind]: "TypeStringEnum",
-    type: "string",
-    enum: values,
-  });
+  constructor(values: T, annotations: Record<string, unknown> = {}) {
+    super();
+    this.enum = values;
+    Object.assign(this, annotations);
+  }
+
+  public Check(value: unknown): value is T[number] {
+    return typeof value === "string" && this.enum.includes(value);
+  }
+}
+
+export const TypeStringEnum = <T extends string[] | readonly string[]>(
+  values: T,
+  annotations: Record<string, unknown> = {}
+) => new TypeStringEnumType(values as string[], annotations);

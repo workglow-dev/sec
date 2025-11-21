@@ -6,7 +6,7 @@
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
 import { DataPortSchemaObject, sleep } from "@podley/util";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { query_run } from "../../util/db";
 import { TypeSecDate, YYYYdMMdDD } from "../../util/parseDate";

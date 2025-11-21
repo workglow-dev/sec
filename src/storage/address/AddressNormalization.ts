@@ -5,21 +5,21 @@
  */
 
 import { AddressParser } from "@sroussey/parse-address";
-import { Address } from "./AddressSchema";
-import { COUNTRY_STATE_CODE_ARRAY, KEYWORD_STATE_OR_COUNTRY_MAP } from "./AddressSchemaCodes";
 import { hasCompanyEnding } from "../company/CompanyNormalization";
+import { Address, type CountryCode, type StateOrCountryCode } from "./AddressSchema";
+import { COUNTRY_STATE_CODE_ARRAY, KEYWORD_STATE_OR_COUNTRY_MAP } from "./AddressSchemaCodes";
 
 export type AddressImport = {
   // required fields
   city?: string | null;
-  stateOrCountry?: string | null;
+  stateOrCountry?: StateOrCountryCode | string | null;
+  countryCode?: CountryCode | string | null;
   // optional fields
   stateOrCountryDescription?: string | null;
   street1?: string | null; // if street 1 is null, street 2 or 3 must have a value
   street2?: string | null;
   street3?: string | null;
   country?: string | null;
-  countryCode?: string | null;
   zipCode?: string | null;
   isForeignLocation?: boolean | null;
   foreignStateTerritory?: string | null;
@@ -245,18 +245,26 @@ export function normalizeAddress(importAddress: AddressImport | null): Address |
   let street3 = cleanStreet(importAddress.street3);
   let zip = importAddress.zipCode?.trim() || null;
   let city = importAddress.city?.trim() || null;
-  let state_or_country = importAddress.stateOrCountry?.trim() || null;
+  let state_or_country: StateOrCountryCode | null =
+    (importAddress.stateOrCountry?.trim() as StateOrCountryCode | null) || null;
 
   [street1, street2, street3] = consolidateStreetAddresses(street1, street2, street3);
 
   state_or_country =
-    state_or_country || findCountryByKeyword([street1, street2, street3, city, state_or_country]);
+    state_or_country ||
+    (findCountryByKeyword([
+      street1,
+      street2,
+      street3,
+      city,
+      state_or_country,
+    ]) as StateOrCountryCode | null);
 
   let country_code = findCountryCode(
     state_or_country,
     importAddress.country,
     importAddress.countryCode
-  );
+  ) as CountryCode | null;
 
   city = normalizeCity(city ?? "");
 
@@ -278,8 +286,9 @@ export function normalizeAddress(importAddress: AddressImport | null): Address |
     street2 = importAddress.street2 || null;
     street3 = importAddress.street3 || null;
     city = city || importAddress.city || null;
-    state_or_country = state_or_country || importAddress.stateOrCountry || null;
-    country_code = country_code || importAddress.countryCode || null;
+    state_or_country =
+      state_or_country || (importAddress.stateOrCountry as StateOrCountryCode) || null;
+    country_code = country_code || (importAddress.countryCode as CountryCode) || null;
     zip = zip || importAddress.zipCode || null;
   }
 

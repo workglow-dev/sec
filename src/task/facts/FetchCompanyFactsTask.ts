@@ -5,12 +5,12 @@
  */
 
 import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
-import { Static, TObject, Type } from "@sinclair/typebox";
+import { DataPortSchemaObject } from "@podley/util";
+import { Static, Type } from "typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { CompanyFacts, Factoid, FactoidSchema } from "../../sec/facts/CompanyFacts";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { secDate, TypeOptionalSecDate } from "../../util/parseDate";
-import { DataPortSchemaObject } from "@podley/util";
 
 // NOTE: company facts are mutable, so we need to pass in a date to break the cache
 

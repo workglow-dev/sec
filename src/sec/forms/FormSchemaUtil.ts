@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Type } from "@sinclair/typebox";
+import { Type } from "typebox";
 
 export const STRING_50_TYPE = Type.String({ minLength: 0, maxLength: 50 });
 export const STRING_150_TYPE = Type.String({ minLength: 1, maxLength: 150 });

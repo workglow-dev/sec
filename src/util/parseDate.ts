@@ -4,7 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { FormatRegistry, Static, Type } from "@sinclair/typebox";
+import { Static, Type } from "typebox";
+import { Format } from "typebox/format";
 
 /**
  * Parses a date string into a year, month, and day.
@@ -71,7 +72,7 @@ export function secDate(date: Date | string): string {
 // export const TypeDateTime = (annotations: Record<string, unknown> = {}) =>
 //   Type.String({ format: "sec-date-time", ...annotations });
 
-FormatRegistry.Set("sec-date", (value: string): boolean => {
+Format.Set("sec-date", (value: string): boolean => {
   return /^(\d{4})-(\d{2})-(\d{2})$/.test(value);
 });
 export const TypeSecDate = (annotations: Record<string, unknown> = {}) =>

@@ -5,7 +5,7 @@
  */
 
 import { IExecuteContext, Task, TaskAbortedError, TaskError } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { Factoid } from "../../sec/facts/CompanyFacts";
 import { query_run } from "../../util/db";
 import { FetchCompanyFactsTask, FetchCompanyFactsTaskOutput } from "./FetchCompanyFactsTask";

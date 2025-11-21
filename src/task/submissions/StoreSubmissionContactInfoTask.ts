@@ -5,10 +5,11 @@
  */
 
 import { IExecuteContext, Task, TaskAbortedError, TaskError } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { AddressRepo } from "../../storage/address/AddressRepo";
 import { PhoneRepo } from "../../storage/phone/PhoneRepo";
 import { FetchSubmissionsOutput, FetchSubmissionsTask } from "./FetchSubmissionsTask";
+import { AddressImport } from "../../storage/address/AddressNormalization";
 
 export type StoreSubmissionContactInfoTaskInput = FetchSubmissionsOutput;
 
@@ -53,7 +54,7 @@ export class StoreSubmissionContactInfoTask extends Task<
     for (const [kind, address] of Object.entries(submission.addresses)) {
       if (address) {
         const addressRepo = new AddressRepo();
-        const addressRecord = await addressRepo.saveAddress(address);
+        const addressRecord = await addressRepo.saveAddress(address as AddressImport);
         if (!country_code && addressRecord.country_code) {
           country_code = addressRecord.country_code;
         }

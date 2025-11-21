@@ -6,19 +6,20 @@
 
 import { TabularRepository } from "@podley/storage";
 import { createServiceToken } from "@podley/util";
-import { Static, Type } from "@sinclair/typebox";
-import { TypeNullable } from "../../util/TypeBoxUtil";
+import { Static, Type } from "typebox";
+import { TypeNullable, TypeStringEnum } from "../../util/TypeBoxUtil";
 import { ISO_COUNTRY_CODE_ARRAY, SEC_STATE_CODE_ARRAY } from "./AddressSchemaCodes";
 
-export const STATE_COUNTRY_CODE = Type.Union(
-  SEC_STATE_CODE_ARRAY.map((sec) => Type.Literal(sec)),
-  { description: "State or SEC Country Code" }
-);
+export type StateOrCountryCode = (typeof SEC_STATE_CODE_ARRAY)[number];
+export type CountryCode = (typeof ISO_COUNTRY_CODE_ARRAY)[number];
 
-export const COUNTRY_CODE = Type.Union(
-  ISO_COUNTRY_CODE_ARRAY.map((iso) => Type.Literal(iso)),
-  { description: "ISO Country Code" }
-);
+export const STATE_COUNTRY_CODE = TypeStringEnum(SEC_STATE_CODE_ARRAY, {
+  description: "State or SEC Country Code",
+});
+
+export const COUNTRY_CODE = TypeStringEnum(ISO_COUNTRY_CODE_ARRAY, {
+  description: "ISO Country Code",
+});
 
 /**
  * Address schema

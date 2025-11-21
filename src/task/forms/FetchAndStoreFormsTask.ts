@@ -5,7 +5,7 @@
  */
 
 import { IExecuteContext, Task, TaskError, Workflow } from "@podley/task-graph";
-import { Static, TObject, Type } from "@sinclair/typebox";
+import { Static, TObject, Type } from "typebox";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { query_all } from "../../util/db";
 import { SecFetchAccessionDocTask } from "./SecFetchAccessionDocTask";

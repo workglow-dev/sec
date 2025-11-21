@@ -5,7 +5,7 @@
  */
 
 import { IExecuteContext, IWorkflow, pipe, Task } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { query_all, query_run } from "../../util/db";
 import { parseDate } from "../../util/parseDate";
 import { FetchCompanyFactsTask } from "./FetchCompanyFactsTask";

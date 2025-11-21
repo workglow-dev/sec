@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Static, TObject, Type } from "@sinclair/typebox";
+import { Static, TObject, Type } from "typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import {
   FullCompanySubmissionSchema,

@@ -6,7 +6,7 @@
 
 // See https://www.sec.gov/files/edgar/filermanual/edgarfilermmanual-vol2-c3.pdf
 
-import type { TObject } from "@sinclair/typebox";
+import type { TObject } from "typebox";
 import { Readable } from "node:stream";
 import { extractArrayPaths } from "./parse_util";
 import { X2jOptions } from "fast-xml-parser";

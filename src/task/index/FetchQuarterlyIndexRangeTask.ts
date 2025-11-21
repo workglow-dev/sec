@@ -14,7 +14,7 @@ import {
 import { FetchQuarterlyIndexTask, FetchQuarterlyIndexTaskOutput } from "./FetchQuarterlyIndexTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { TypeDateTime } from "../../util/TypeBoxUtil";
-import { Static, TObject, Type } from "@sinclair/typebox";
+import { Static, TObject, Type } from "typebox";
 
 // NOTE: ONLY PREVIOUS QUARTERS' master index are immutable, current one is not (though should switch to daily)
 

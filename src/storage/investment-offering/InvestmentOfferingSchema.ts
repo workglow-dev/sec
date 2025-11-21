@@ -6,7 +6,7 @@
 
 import { TabularRepository } from "@podley/storage";
 import { createServiceToken } from "@podley/util";
-import { Static, Type } from "@sinclair/typebox";
+import { Static, Type } from "typebox";
 import { TypeNullable } from "../../util/TypeBoxUtil";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 
@@ -36,7 +36,7 @@ export const InvestmentOfferingSchema = Type.Object({
     })
   ),
   exemptions: TypeNullable(
-    Type.Any({
+    Type.Array(Type.String(), {
       description: "JSON array of exemptions claimed",
     })
   ),

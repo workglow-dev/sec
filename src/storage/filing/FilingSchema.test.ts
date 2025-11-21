@@ -5,7 +5,7 @@
  */
 
 import { describe, it, expect, beforeEach } from "bun:test";
-import { Value } from "@sinclair/typebox/value";
+import { Value } from "typebox/value";
 import { resetDependencyInjectionsForTesting } from "../../config/TestingDI";
 import { EntityRepo } from "../entity/EntityRepo";
 import { Filing, FilingSchema } from "./FilingSchema";

@@ -6,12 +6,12 @@
 
 // data.sec.gov/api/xbrl/companyfacts/CIK{cik}.json
 
-import { Static, Type } from "@sinclair/typebox";
-import { TypeDate, TypeNullable } from "../../util/TypeBoxUtil";
-import { YYYYdMMdDD } from "../../util/parseDate";
+import { Static, Type } from "typebox";
 import { Frame } from "../../util/BaseTypes";
-import { TypeSECForm } from "../submissions/EnititySubmissionSchema";
+import { TypeDate, TypeNullable, TypeStringEnum } from "../../util/TypeBoxUtil";
+import { YYYYdMMdDD } from "../../util/parseDate";
 import { AllForms } from "../forms/all-forms";
+import { TypeSECForm } from "../submissions/EnititySubmissionSchema";
 
 export interface CompanyFacts {
   cik: number;
@@ -59,7 +59,7 @@ export const FactoidSchema = Type.Object({
   start_date: TypeNullable(TypeDate()),
   end_date: TypeDate(),
   fy: Type.Number({ format: "year" }),
-  fp: Type.Union(FP.map((fp) => Type.Literal(fp))),
+  fp: TypeStringEnum(FP),
 });
 
 export type Factoid = Static<typeof FactoidSchema>;

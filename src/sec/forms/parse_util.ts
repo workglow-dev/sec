@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TSchema, Kind } from "@sinclair/typebox";
+import { TSchema, Type } from "typebox";
 import { Readable } from "node:stream";
 
 /** Read a Node.js Readable stream completely into a UTF-8 string */
@@ -20,30 +20,25 @@ export function extractArrayPaths(schema: TSchema, basePath: string = ""): strin
   const arrayPaths: string[] = [];
 
   function walk(currentSchema: TSchema, currentPath: string) {
-    if (currentSchema[Kind] === "Array") {
+    if (Type.IsArray(currentSchema)) {
       arrayPaths.push(currentPath);
       // Also walk the array items to find nested arrays
-      if (currentSchema.items) {
-        walk(currentSchema.items as TSchema, currentPath);
-      }
-    } else if (currentSchema[Kind] === "Object" && currentSchema.properties) {
+      walk(currentSchema.items, currentPath);
+    } else if (Type.IsObject(currentSchema)) {
       for (const [key, value] of Object.entries(currentSchema.properties)) {
         const newPath = currentPath ? `${currentPath}.${key}` : key;
-        walk(value as TSchema, newPath);
+        walk(value, newPath);
       }
-    } else if (currentSchema[Kind] === "Union" && currentSchema.anyOf) {
+    } else if (Type.IsUnion(currentSchema)) {
       // Handle unions by checking each variant
       for (const variant of currentSchema.anyOf) {
-        walk(variant as TSchema, currentPath);
+        walk(variant, currentPath);
       }
-    } else if (currentSchema[Kind] === "Composite" && currentSchema.allOf) {
+    } else if (Type.IsIntersect(currentSchema)) {
       // Handle composite types
       for (const part of currentSchema.allOf) {
-        walk(part as TSchema, currentPath);
+        walk(part, currentPath);
       }
-    } else if (currentSchema[Kind] === "Optional" && currentSchema.type) {
-      // Handle optional types
-      walk(currentSchema.type as TSchema, currentPath);
     }
   }
 

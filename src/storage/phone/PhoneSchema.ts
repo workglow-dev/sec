@@ -6,7 +6,7 @@
 
 import { TabularRepository } from "@podley/storage";
 import { createServiceToken } from "@podley/util";
-import { Static, Type } from "@sinclair/typebox";
+import { Static, Type } from "typebox";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 
 export const PHONE_TYPE = Type.Union(

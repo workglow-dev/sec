@@ -6,7 +6,7 @@
 
 import { IExecuteContext, IWorkflow, pipe, Task } from "@podley/task-graph";
 import { sleep } from "@podley/util";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { processUpdateProcessing } from "./StoreSubmissionsTask";
 import { query_all } from "../../util/db";
 import { FetchSubmissionsTask } from "./FetchSubmissionsTask";

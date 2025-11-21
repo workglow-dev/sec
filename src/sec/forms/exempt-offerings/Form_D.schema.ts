@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Type, Static } from "@sinclair/typebox";
+import { Type, Static } from "typebox";
 import {
   TRUE_FALSE_LIST,
   RELATIONSHIP_LIST,
@@ -304,14 +304,16 @@ const NAMES_LIST_TYPE = Type.Union([
   Type.Object({ previousName: Type.Optional(Type.Array(ENTITY_NAME_TYPE, { maxItems: 3 })) }),
 ]);
 
-const YEAR_INC_TYPE = Type.Object({
-  ...Type.Union([
+const YEAR_INC_TYPE = Type.Intersect([
+  Type.Union([
     Type.Object({ withinFiveYears: IS_TRUE_TYPE }),
     Type.Object({ yetToBeFormed: IS_TRUE_TYPE }),
     Type.Object({ overFiveYears: IS_TRUE_TYPE }),
-  ]).properties!,
-  value: Type.Optional(YEAR_VALUE_TYPE),
-});
+  ]),
+  Type.Object({
+    value: Type.Optional(YEAR_VALUE_TYPE),
+  }),
+]);
 
 const FILED_BY_COMPANY_FORMD_TYPE = Type.Object({
   cik: CIK_TYPE,
@@ -319,7 +321,7 @@ const FILED_BY_COMPANY_FORMD_TYPE = Type.Object({
   entityName: Type.Optional(ENTITY_NAME_TYPE),
 });
 
-const ISSUER_TYPE = Type.Composite([
+const ISSUER_TYPE = Type.Intersect([
   FILED_BY_COMPANY_FORMD_TYPE,
   Type.Object({
     issuerAddress: FORMD_ADDRESS_TYPE,

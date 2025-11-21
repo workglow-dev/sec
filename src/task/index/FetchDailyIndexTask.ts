@@ -5,7 +5,7 @@
  */
 
 import { IExecuteContext, Task } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { parse } from "csv-parse/sync";
 import { response_type, SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";

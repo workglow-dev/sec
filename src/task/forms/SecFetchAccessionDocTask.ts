@@ -5,7 +5,7 @@
  */
 
 import { TaskInput } from "@podley/task-graph";
-import { TObject, Type } from "@sinclair/typebox";
+import { TObject, Type } from "typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { DataPortSchemaObject } from "@podley/util";
