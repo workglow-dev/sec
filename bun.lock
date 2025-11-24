@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 0,
   "workspaces": {
     "": {
       "name": "@podley/sec",
@@ -10,7 +9,7 @@
         "@podley/sqlite": "0.0.47",
         "@podley/storage": "0.0.47",
         "@podley/task-graph": "0.0.47",
-        "@podley/tasks": "0.0.47",
+        "@podley/tasks": "0.0.48",
         "@podley/util": "0.0.47",
         "@sroussey/parse-address": "^2.4.2",
         "@sroussey/parse-full-name": "^2.0.0",
@@ -120,7 +119,7 @@
 
     "@podley/task-graph": ["@podley/task-graph@0.0.47", "", { "peerDependencies": { "@podley/job-queue": "0.0.47", "@podley/storage": "0.0.47", "@podley/util": "0.0.47" } }, "sha512-qQj39ouZcZ10jJDdggCvuAjC6JI1+RaWcdtilQH1ACSTOf+kXAHShWLy3UDJSB75BtUszIWBKHaRYFSuEqPV4w=="],
 
-    "@podley/tasks": ["@podley/tasks@0.0.47", "", { "peerDependencies": { "@podley/job-queue": "0.0.47", "@podley/storage": "0.0.47", "@podley/task-graph": "0.0.47", "@podley/util": "0.0.47" } }, "sha512-14L/EjG0g9J8ZqJP+mzdvryiCuy74tdyOW9uO168Rp3DQq6P73ZO8a2Z5zOFyTTUaxOOjFm03vWy+HJ9WRq53w=="],
+    "@podley/tasks": ["@podley/tasks@0.0.48", "", { "peerDependencies": { "@podley/job-queue": "0.0.48", "@podley/storage": "0.0.48", "@podley/task-graph": "0.0.48", "@podley/util": "0.0.48" } }, "sha512-xs+q7U3Q8Qt3RiE/p8Myl/bvD5UhX6XyCjxpLsVBIFgzU4A3xkQpsTvnbZI2cGcKe3iLHEeq4ELWJ38ht1Q/WQ=="],
 
     "@podley/test": ["@podley/test@0.0.47", "", { "peerDependencies": { "@electric-sql/pglite": "^0.3.11", "@podley/ai": "0.0.47", "@podley/ai-provider": "0.0.47", "@podley/job-queue": "0.0.47", "@podley/sqlite": "0.0.47", "@podley/storage": "0.0.47", "@podley/task-graph": "0.0.47", "@podley/tasks": "0.0.47", "@podley/util": "0.0.47", "@supabase/supabase-js": "^2.76.1", "pg": "^8.16.3" } }, "sha512-C5V+pE45moV+M4MVrIx1hZZ3fwGsLpra7117p4+/IcAvFYMKf4m2g9+ozVmdl9xzqh4hsRTCEIRIgR0rjIy7DQ=="],
 
@@ -589,6 +588,8 @@
     "yargs-parser": ["yargs-parser@21.1.1", "", {}, "sha512-tVpsJW7DdjecAiFpbIB1e3qxIQsE6NoPc5/eTdrbbIC4h0LVsWhnoa3g+m2HclBIujHzsxZ4VJVA+GUuc2/LBw=="],
 
     "yoga-layout": ["yoga-layout@3.2.1", "", {}, "sha512-0LPOt3AxKqMdFBZA3HBAt/t/8vIKq7VaQYbuA8WxCgung+p9TVyKRYdpvCb80HcdTN2NkbIKbhNwKUfm3tQywQ=="],
+
+    "@podley/cli/@podley/tasks": ["@podley/tasks@0.0.47", "", { "peerDependencies": { "@podley/job-queue": "0.0.47", "@podley/storage": "0.0.47", "@podley/task-graph": "0.0.47", "@podley/util": "0.0.47" } }, "sha512-14L/EjG0g9J8ZqJP+mzdvryiCuy74tdyOW9uO168Rp3DQq6P73ZO8a2Z5zOFyTTUaxOOjFm03vWy+HJ9WRq53w=="],
 
     "@sagold/json-query/@sagold/json-pointer": ["@sagold/json-pointer@5.1.2", "", {}, "sha512-+wAhJZBXa6MNxRScg6tkqEbChEHMgVZAhTHVJ60Y7sbtXtu9XA49KfUkdWlS2x78D6H9nryiKePiYozumauPfA=="],
 
