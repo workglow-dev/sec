@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { JobQueueTaskConfig, TaskOutput } from "@podley/task-graph";
-import { FetchTask, FetchTaskInput, FetchTaskOutput } from "@podley/tasks";
-import { Job, JobConstructorParam } from "@podley/job-queue";
+import { JobQueueTaskConfig, TaskOutput } from "@workglow/task-graph";
+import { FetchTask, FetchTaskInput, FetchTaskOutput } from "@workglow/tasks";
+import { Job, JobConstructorParam } from "@workglow/job-queue";
 import { SecJobQueueName, SecUserAgent } from "../config/Constants";
 import { SecFetchJob } from "./SecFetchJob";
 

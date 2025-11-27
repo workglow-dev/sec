@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { runWorkflow } from "@podley/cli";
-import { Workflow } from "@podley/task-graph";
+import { runWorkflow } from "@workglow/cli";
+import { Workflow } from "@workglow/task-graph";
 import type { Command } from "commander";
 import { FetchSubmissionsTask } from "../task/submissions/FetchSubmissionsTask";
 import { StoreSubmissionsTask } from "../task/submissions/StoreSubmissionsTask";

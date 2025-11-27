@@ -1,5 +1,5 @@
 {
-  "name": "Podley SEC",
+  "name": "Workglow SEC",
   "build": { "dockerfile": "./Dockerfile" },
 
   "customizations": {

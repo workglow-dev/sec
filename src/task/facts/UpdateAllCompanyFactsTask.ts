@@ -4,13 +4,13 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { IExecuteContext, IWorkflow, pipe, Task } from "@podley/task-graph";
+import { IExecuteContext, IWorkflow, pipe, Task } from "@workglow/task-graph";
 import { TObject, Type } from "typebox";
 import { query_all, query_run } from "../../util/db";
 import { parseDate } from "../../util/parseDate";
 import { FetchCompanyFactsTask } from "./FetchCompanyFactsTask";
 import { StoreCompanyFactsTask } from "./StoreCompanyFactsTask";
-import { sleep } from "@podley/util";
+import { sleep } from "@workglow/util";
 
 export type UpdateAllCompanyFactsTaskInput = {};
 

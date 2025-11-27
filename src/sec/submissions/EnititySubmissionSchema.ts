@@ -6,7 +6,7 @@
 
 import { Static, Type } from "typebox";
 import { Format } from "typebox/format";
-import { ArrayToObject } from "@podley/util";
+import { ArrayToObject } from "@workglow/util";
 import { TypeNullable } from "../../util/TypeBoxUtil";
 import { ALL_FORM_NAMES } from "../forms/all-forms";
 

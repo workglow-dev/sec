@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { runTasks } from "@podley/cli";
+import { runTasks } from "@workglow/cli";
 import type { Command } from "commander";
 import { UpdateAllCompanyFactsTask } from "../task/facts/UpdateAllCompanyFactsTask";
 

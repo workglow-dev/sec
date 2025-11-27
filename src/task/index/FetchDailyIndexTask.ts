@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { IExecuteContext, Task } from "@podley/task-graph";
+import { IExecuteContext, Task } from "@workglow/task-graph";
 import { TObject, Type } from "typebox";
 import { parse } from "csv-parse/sync";
 import { response_type, SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";

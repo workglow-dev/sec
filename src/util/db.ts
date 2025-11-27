@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { Sqlite } from "@podley/sqlite";
-import { globalServiceRegistry } from "@podley/util";
+import { Sqlite } from "@workglow/sqlite";
+import { globalServiceRegistry } from "@workglow/util";
 import { mkdirSync } from "fs";
 import path from "path";
 import { sleepSync } from "bun";

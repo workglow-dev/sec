@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { runTasks } from "@podley/cli";
-import { pipe } from "@podley/task-graph";
+import { runTasks } from "@workglow/cli";
+import { pipe } from "@workglow/task-graph";
 import type { Command } from "commander";
 import { FetchDailyIndexTask } from "../task/index/FetchDailyIndexTask";
 import { StoreCikLastUpdatedTask } from "../task/index/StoreCikLastUpdatedTask";

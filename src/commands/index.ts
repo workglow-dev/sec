@@ -14,7 +14,7 @@ import { AddDailyIndexCommands } from "./DailyIndex";
 import { SetupDB } from "./SetupDB";
 import { UpdateAllCompanyFacts } from "./UpdateAllCompanyFacts";
 import { SecJobQueue } from "../fetch/SecJobQueue";
-import { getTaskQueueRegistry } from "@podley/task-graph";
+import { getTaskQueueRegistry } from "@workglow/task-graph";
 import { UpdateAllSubmissions } from "./UpdateAllSubmissions";
 import { Form } from "./Form";
 import { Doc } from "./Doc";

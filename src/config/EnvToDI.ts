@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { globalServiceRegistry } from "@podley/util";
+import { globalServiceRegistry } from "@workglow/util";
 import { SEC_DB_FOLDER, SEC_DB_NAME, SEC_RAW_DATA_FOLDER } from "./tokens";
 
 export const EnvToDI = () => {

@@ -1,8 +1,8 @@
 {
-  "name": "@podley/sec",
+  "name": "@workglow/sec",
   "type": "module",
   "version": "0.0.5",
-  "description": "Podley SEC is an example of using the Podley AI library to build a tool for retrieving SEC data.",
+  "description": "Workglow SEC is an example of using the Workglow AI library to build a tool for retrieving SEC data.",
   "scripts": {
     "dev": "concurrently -c 'auto' -n 'sec:' 'bun:dev-*'",
     "dev-js": "bun build --watch --target=bun --sourcemap=external --packages=external --outdir ./dist ./src/sec.ts",
@@ -18,13 +18,13 @@
     "dist"
   ],
   "dependencies": {
-    "@podley/cli": "0.0.50",
-    "@podley/job-queue": "0.0.50",
-    "@podley/sqlite": "0.0.50",
-    "@podley/storage": "0.0.50",
-    "@podley/task-graph": "0.0.50",
-    "@podley/tasks": "0.0.50",
-    "@podley/util": "0.0.50",
+    "@workglow/cli": "0.0.52",
+    "@workglow/job-queue": "0.0.52",
+    "@workglow/sqlite": "0.0.52",
+    "@workglow/storage": "0.0.52",
+    "@workglow/task-graph": "0.0.52",
+    "@workglow/tasks": "0.0.52",
+    "@workglow/util": "0.0.52",
     "@sroussey/parse-address": "^2.4.2",
     "@sroussey/parse-full-name": "^2.0.0",
     "awesome-phonenumber": "^7.6.0",

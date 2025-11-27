@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TaskInput, TaskOutput, TaskOutputRepository } from "@podley/task-graph";
-import { FetchTaskOutput } from "@podley/tasks";
+import { TaskInput, TaskOutput, TaskOutputRepository } from "@workglow/task-graph";
+import { FetchTaskOutput } from "@workglow/tasks";
 import { mkdirSync } from "node:fs";
 import { mkdir, readFile, writeFile, stat } from "node:fs/promises";
 import path from "node:path";

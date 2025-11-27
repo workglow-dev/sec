@@ -4,10 +4,10 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { runWorkflow } from "@podley/cli";
+import { runWorkflow } from "@workglow/cli";
 import type { Command } from "commander";
 import { FetchAllCikNamesTask } from "../task/ciknames/FetchAllCikNamesTask";
-import { pipe } from "@podley/task-graph";
+import { pipe } from "@workglow/task-graph";
 import { StoreCikNamesTask } from "../task/ciknames/StoreCikNamesTask";
 
 export function BootstrapAllCikNames(program: Command) {

@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it, mock } from "bun:test";
-import { InMemoryTabularRepository } from "@podley/storage";
+import { InMemoryTabularRepository } from "@workglow/storage";
 import { AddressRepo } from "./AddressRepo";
 import type { Address } from "./AddressSchema";
 import { normalizeAddress, type AddressImport } from "./AddressNormalization";
