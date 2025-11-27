@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { IExecuteContext, Task, TaskAbortedError } from "@podley/task-graph";
-import { DataPortSchemaObject } from "@podley/util";
+import { IExecuteContext, Task, TaskAbortedError } from "@workglow/task-graph";
+import { DataPortSchemaObject } from "@workglow/util";
 import { Static, Type } from "typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { CompanyFacts, Factoid, FactoidSchema } from "../../sec/facts/CompanyFacts";

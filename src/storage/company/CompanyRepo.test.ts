@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TabularRepository } from "@podley/storage";
+import { TabularRepository } from "@workglow/storage";
 import { beforeEach, describe, expect, it } from "bun:test";
 import { resetDependencyInjectionsForTesting } from "../../config/TestingDI";
 import { normalizeCompany } from "./CompanyNormalization";

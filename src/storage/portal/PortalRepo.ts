@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { globalServiceRegistry } from "@podley/util";
+import { globalServiceRegistry } from "@workglow/util";
 import { Portal, PORTAL_REPOSITORY_TOKEN, PortalRepositoryStorage } from "./PortalSchema";
 
 // Options for the PortalRepo

@@ -4,9 +4,9 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { IExecuteContext, TaskConfig, TaskOutput } from "@podley/task-graph";
-import { FetchTaskInput, FetchTaskOutput } from "@podley/tasks";
-import { globalServiceRegistry } from "@podley/util";
+import { IExecuteContext, TaskConfig, TaskOutput } from "@workglow/task-graph";
+import { FetchTaskInput, FetchTaskOutput } from "@workglow/tasks";
+import { globalServiceRegistry } from "@workglow/util";
 import path from "node:path";
 import { YYYYdMMdDD } from "../util/parseDate";
 import { SEC_RAW_DATA_FOLDER } from "../config/tokens";

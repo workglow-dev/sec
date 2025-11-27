@@ -5,7 +5,7 @@
  */
 
 import { beforeEach, describe, expect, it } from "bun:test";
-import { objectOfArraysAsArrayOfObjects } from "@podley/util";
+import { objectOfArraysAsArrayOfObjects } from "@workglow/util";
 // @ts-ignore
 import submissions1017389 from "./mock_data/submissions_1017389.json" with { type: "json" };
 import { resetDependencyInjectionsForTesting } from "../../config/TestingDI";

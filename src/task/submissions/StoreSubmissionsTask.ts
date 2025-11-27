@@ -11,7 +11,7 @@ import {
   TaskError,
   Workflow,
   parallel,
-} from "@podley/task-graph";
+} from "@workglow/task-graph";
 import { TObject, Type } from "typebox";
 import { todayYYYYdMMdDD } from "../../util/dataCleaningUtils";
 import { FetchSubmissionsOutput, FetchSubmissionsTask } from "./FetchSubmissionsTask";

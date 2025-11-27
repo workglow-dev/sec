@@ -11,8 +11,8 @@ import {
   TaskFailedError,
   TaskGraph,
   Workflow,
-} from "@podley/task-graph";
-import { FetchTaskOutput } from "@podley/tasks";
+} from "@workglow/task-graph";
+import { FetchTaskOutput } from "@workglow/tasks";
 import { Static, TObject, Type } from "typebox";
 import { Value } from "typebox/value";
 import {

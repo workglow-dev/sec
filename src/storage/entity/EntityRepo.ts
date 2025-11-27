@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { globalServiceRegistry } from "@podley/util";
+import { globalServiceRegistry } from "@workglow/util";
 import { Entity, ENTITY_REPOSITORY_TOKEN, EntityRepositoryStorage } from "./EntitySchema";
 import {
   ENTITY_TICKER_REPOSITORY_TOKEN,

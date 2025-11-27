@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { SqliteTabularRepository } from "@podley/storage";
-import { globalServiceRegistry } from "@podley/util";
+import { SqliteTabularRepository } from "@workglow/storage";
+import { globalServiceRegistry } from "@workglow/util";
 import {
   ADDRESS_JUNCTION_REPOSITORY_TOKEN,
   ADDRESS_REPOSITORY_TOKEN,

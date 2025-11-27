@@ -10,7 +10,7 @@ import {
   Task,
   TaskGraph,
   GRAPH_RESULT_ARRAY,
-} from "@podley/task-graph";
+} from "@workglow/task-graph";
 import { FetchQuarterlyIndexTask, FetchQuarterlyIndexTaskOutput } from "./FetchQuarterlyIndexTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
 import { TypeDateTime } from "../../util/TypeBoxUtil";

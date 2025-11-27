@@ -4,11 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { TaskInput } from "@podley/task-graph";
+import { TaskInput } from "@workglow/task-graph";
 import { TObject, Type } from "typebox";
 import { SecCachedFetchTask } from "../../fetch/SecCachedFetchTask";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
-import { DataPortSchemaObject } from "@podley/util";
+import { DataPortSchemaObject } from "@workglow/util";
 
 // NOTE: accession documents are immutable, so we don't need to pass in a date for invalidation
 

@@ -4,17 +4,17 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getTaskQueueRegistry, setTaskQueueRegistry } from "@podley/task-graph";
+import { getTaskQueueRegistry, setTaskQueueRegistry } from "@workglow/task-graph";
 import { afterAll, beforeAll, describe, expect, it, mock } from "bun:test";
 import { FetchDailyIndexTask } from "./FetchDailyIndexTask";
-import { TaskFailedError } from "@podley/task-graph";
-import { FetchTaskOutput } from "@podley/tasks";
-import { JobQueue } from "@podley/job-queue";
-import { FetchTaskInput } from "@podley/tasks";
+import { TaskFailedError } from "@workglow/task-graph";
+import { FetchTaskOutput } from "@workglow/tasks";
+import { JobQueue } from "@workglow/job-queue";
+import { FetchTaskInput } from "@workglow/tasks";
 import { SecFetchJob } from "../../fetch/SecFetchJob";
 import { SecJobQueueName } from "../../config/Constants";
-import { InMemoryQueueStorage } from "@podley/storage";
-import { InMemoryRateLimiter } from "@podley/job-queue";
+import { InMemoryQueueStorage } from "@workglow/storage";
+import { InMemoryRateLimiter } from "@workglow/job-queue";
 import { EnvToDI } from "../../config/EnvToDI";
 import { readFileSync } from "fs";
 import { join } from "path";

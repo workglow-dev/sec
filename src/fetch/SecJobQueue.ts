@@ -9,9 +9,9 @@ import {
   EvenlySpacedRateLimiter,
   InMemoryRateLimiter,
   JobQueue,
-} from "@podley/job-queue";
-import { InMemoryQueueStorage } from "@podley/storage";
-import { FetchTaskInput, FetchTaskOutput } from "@podley/tasks";
+} from "@workglow/job-queue";
+import { InMemoryQueueStorage } from "@workglow/storage";
+import { FetchTaskInput, FetchTaskOutput } from "@workglow/tasks";
 import { SecJobQueueName } from "../config/Constants";
 import { SecFetchJob } from "./SecFetchJob";
 
