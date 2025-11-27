@@ -23,7 +23,7 @@
     "@podley/sqlite": "0.0.50",
     "@podley/storage": "0.0.50",
     "@podley/task-graph": "0.0.50",
-    "@podley/tasks": "0.0.50",
+    "@podley/tasks": "0.0.51",
     "@podley/util": "0.0.50",
     "@sroussey/parse-address": "^2.4.2",
     "@sroussey/parse-full-name": "^2.0.0",
