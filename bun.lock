@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "@workglow/sec",
@@ -24,7 +23,7 @@
         "fast-xml-parser": "^5.3.2",
         "html-entities": "^2.6.0",
         "pdf2json": "^3.2.2",
-        "typebox": "1.0.56",
+        "typebox": "1.0.60",
         "words-to-numbers": "^1.5.1",
         "xml2js": "^0.6.2",
       },
@@ -552,7 +551,7 @@
 
     "type-fest": ["type-fest@4.41.0", "", {}, "sha512-TeTSQ6H5YHvpqVwBRcnLDCBnDOHWYu7IvGbHT6N8AOymcr9PJGjc1GTtiWZTYg0NCgYwvnYWEkVChQAr9bjfwA=="],
 
-    "typebox": ["typebox@1.0.56", "", {}, "sha512-KMd1DJnIRqLUzAicpFmGqgmt+/IePCEmT/Jtywyyyn0hK6+dupQnxm7OAIn/cL/vu22jKi1XvDjDhrpatZ46kA=="],
+    "typebox": ["typebox@1.0.60", "", {}, "sha512-O1cnkQLCnKmOPjb5s6hUQCWhQYMu2p7OiSmDv4abie31CzmcXlfqYXAbTEBRSe1+fLC79Xjxn3wL14V8Nb0w5A=="],
 
     "typescript": ["typescript@5.9.3", "", { "bin": { "tsc": "bin/tsc", "tsserver": "bin/tsserver" } }, "sha512-jl1vZzPDinLr9eUt3J/t7V6FgNEw9QjvBPdysz9KfQDD41fQrC2Y4vKQdiaUpFT4bXlb1RHhLpp8wtm6M5TgSw=="],
 
