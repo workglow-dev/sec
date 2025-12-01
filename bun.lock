@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "@workglow/sec",
@@ -10,7 +9,7 @@
         "@workglow/cli": "0.0.52",
         "@workglow/job-queue": "0.0.52",
         "@workglow/sqlite": "0.0.52",
-        "@workglow/storage": "0.0.52",
+        "@workglow/storage": "0.0.54",
         "@workglow/task-graph": "0.0.52",
         "@workglow/tasks": "0.0.52",
         "@workglow/util": "0.0.52",
@@ -176,7 +175,7 @@
 
     "@workglow/sqlite": ["@workglow/sqlite@0.0.52", "", { "peerDependencies": { "@sqlite.org/sqlite-wasm": "^3.50.4-build1", "better-sqlite3": "^12.4.6" } }, "sha512-0r4ZTgOCpdipN5kSx+4mQecGq1yXavhkwxHjTyjWjH6A7vVN0t5K+OgIeOS8cyqa9oA3GFXxqVUutisVyEd/AA=="],
 
-    "@workglow/storage": ["@workglow/storage@0.0.52", "", { "peerDependencies": { "@supabase/supabase-js": "^2.84.0", "@workglow/sqlite": "0.0.52", "@workglow/util": "0.0.52", "pg": "^8.16.3" } }, "sha512-fp86E4Jk0v43j0KYvIv/njD1OI10rNUjJUCMQtjX6tT1k4xLc4GQT5Gc8HDFw+wrGesG5BC89rDrYsTRCt8P3w=="],
+    "@workglow/storage": ["@workglow/storage@0.0.54", "", { "peerDependencies": { "@supabase/supabase-js": "^2.84.0", "@workglow/sqlite": "0.0.54", "@workglow/util": "0.0.54", "pg": "^8.16.3" } }, "sha512-/CNcfn1UoWT9uWZE+BVs81I9pPA34zgAMVUrrdzcdro2sfcTx8rNZ1qAOVd8kJV9MTMN5yR8OZf45d5Xr9/etw=="],
 
     "@workglow/task-graph": ["@workglow/task-graph@0.0.52", "", { "peerDependencies": { "@workglow/job-queue": "0.0.52", "@workglow/storage": "0.0.52", "@workglow/util": "0.0.52" } }, "sha512-PjfMFPnO276/YpYdEZBvmfTCklMDhpYv7+IrdaT3aoFXqxoORR7jk0ehKHQr+AdwFTOQQnBhyTrNvO/Rr3vp5A=="],
 
@@ -599,6 +598,8 @@
     "@sagold/json-query/@sagold/json-pointer": ["@sagold/json-pointer@5.1.2", "", {}, "sha512-+wAhJZBXa6MNxRScg6tkqEbChEHMgVZAhTHVJ60Y7sbtXtu9XA49KfUkdWlS2x78D6H9nryiKePiYozumauPfA=="],
 
     "@supabase/realtime-js/ws": ["ws@8.18.3", "", { "peerDependencies": { "bufferutil": "^4.0.1", "utf-8-validate": ">=5.0.2" }, "optionalPeers": ["bufferutil", "utf-8-validate"] }, "sha512-PEIGCY5tSlUt50cqyMXfCzX+oOPqN0vuGqWzbcJ2xvnkzkq46oOpz7dQaTDBdfICb4N14+GARUDw2XV2N4tvzg=="],
+
+    "@workglow/cli/@workglow/storage": ["@workglow/storage@0.0.52", "", { "peerDependencies": { "@supabase/supabase-js": "^2.84.0", "@workglow/sqlite": "0.0.52", "@workglow/util": "0.0.52", "pg": "^8.16.3" } }, "sha512-fp86E4Jk0v43j0KYvIv/njD1OI10rNUjJUCMQtjX6tT1k4xLc4GQT5Gc8HDFw+wrGesG5BC89rDrYsTRCt8P3w=="],
 
     "cli-truncate/slice-ansi": ["slice-ansi@5.0.0", "", { "dependencies": { "ansi-styles": "^6.0.0", "is-fullwidth-code-point": "^4.0.0" } }, "sha512-FC+lgizVPfie0kkhqUScwRu1O/lF6NOgJmlCgK+/LYxDCTk8sGelYaHDhFcDN+Sn3Cv+3VSa4Byeo+IMCzpMgQ=="],
 
