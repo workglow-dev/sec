@@ -9,7 +9,7 @@
         "@sroussey/parse-full-name": "^2.0.0",
         "@workglow/cli": "0.0.57",
         "@workglow/job-queue": "0.0.57",
-        "@workglow/sqlite": "0.0.57",
+        "@workglow/sqlite": "0.0.58",
         "@workglow/storage": "0.0.57",
         "@workglow/task-graph": "0.0.57",
         "@workglow/tasks": "0.0.57",
@@ -174,7 +174,7 @@
 
     "@workglow/job-queue": ["@workglow/job-queue@0.0.57", "", { "peerDependencies": { "@workglow/sqlite": "0.0.57", "@workglow/storage": "0.0.57", "@workglow/util": "0.0.57", "pg": "^8.16.3" } }, "sha512-2BVrSmNM/FBckpkiyZFrNP6ISTiCPE1zbzS2A+nmofsM7BucLWCUKSJWc5etI46+tdNO4kMvCYXT5nEMRHS15A=="],
 
-    "@workglow/sqlite": ["@workglow/sqlite@0.0.57", "", { "peerDependencies": { "@sqlite.org/sqlite-wasm": "^3.51.1-build2", "better-sqlite3": "^12.5.0" } }, "sha512-qikcsVQTiFfVJmu8CTTtur2TmfIf4Xj4hMxws+jUwhCMRZV+4fi6DQ7UMSPTnxKfwDM7xH5L97Ldn7gtgsrdSw=="],
+    "@workglow/sqlite": ["@workglow/sqlite@0.0.58", "", { "peerDependencies": { "@sqlite.org/sqlite-wasm": "^3.51.1-build2", "better-sqlite3": "^12.5.0" } }, "sha512-ZLToPqGWIh8Jfz0+bDEBzM0VwslglW1SVonO6TnD/RshOJPbLZk89JLqEGp57iO70xkannCSMpG2yrIzCjVotQ=="],
 
     "@workglow/storage": ["@workglow/storage@0.0.57", "", { "peerDependencies": { "@supabase/supabase-js": "^2.86.2", "@workglow/sqlite": "0.0.57", "@workglow/util": "0.0.57", "pg": "^8.16.3" } }, "sha512-+t49sRjW7KbNmNKDlqHXPYuxa+W/M0BkMxvT+CgMkEd6dnaZiVpdgWD0clJIv7DKPSUlMFIghZkdvp4Vcqv/hA=="],
 
