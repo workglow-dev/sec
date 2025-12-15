@@ -23,7 +23,7 @@
     "@workglow/sqlite": "0.0.66",
     "@workglow/storage": "0.0.66",
     "@workglow/task-graph": "0.0.66",
-    "@workglow/tasks": "0.0.66",
+    "@workglow/tasks": "0.0.70",
     "@workglow/util": "0.0.66",
     "@sroussey/parse-address": "^2.4.2",
     "@sroussey/parse-full-name": "^2.0.0",
