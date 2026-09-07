@@ -5,7 +5,7 @@
  */
 
 import { globalServiceRegistry } from "workglow";
-import { ADV_ADVISER_REPOSITORY_TOKEN, type AdvAdviser } from "../../storage/adv/AdvAdviserSchema";
+import { ADV_ADVISER_REPOSITORY_TOKEN } from "../../storage/adv/AdvAdviserSchema";
 import { FILING_DOCUMENT_REPOSITORY_TOKEN } from "../../storage/document/FilingDocumentSchema";
 import { FILING_SECTION_REPOSITORY_TOKEN } from "../../storage/document/FilingSectionSchema";
 import { CIK_NAME_REPOSITORY_TOKEN } from "../../storage/entity/CikNameSchema";
@@ -88,14 +88,23 @@ function daysBetween(from: string, to: string): number {
   return Math.max(0, Math.round(ms / 86_400_000));
 }
 
+/**
+ * The newest ADV archive period held, for the parenthetical on the advisers
+ * row.
+ *
+ * One indexed read rather than a scan: `snapshot` leads the primary key, so
+ * ordering by it descending and taking a single row is a reverse seek on the
+ * key index. Streaming the table and comparing in JS read every adviser row of
+ * every retained snapshot to render one date.
+ */
 async function latestAdvSnapshot(): Promise<string | undefined> {
   try {
     const repo = globalServiceRegistry.get(ADV_ADVISER_REPOSITORY_TOKEN);
-    let newest: string | undefined;
-    for await (const row of repo.records(1000) as AsyncIterable<AdvAdviser>) {
-      if (newest === undefined || row.snapshot > newest) newest = row.snapshot;
-    }
-    return newest;
+    const newest = await repo.getAll({
+      orderBy: [{ column: "snapshot", direction: "DESC" }],
+      limit: 1,
+    });
+    return newest?.[0]?.snapshot;
   } catch (error) {
     if (isMissingRelationError(error)) return undefined;
     throw error;
