@@ -54,6 +54,47 @@ export interface AskTaskOutput {
   /** The model that answered, and why it was the one. */
   readonly modelId: string;
   readonly modelReason: string;
+  /**
+   * Whether filing text was actually retrieved and cited.
+   *
+   * A field rather than something a caller infers from `references.length`: a
+   * consumer should not have to work out that an answer is fiction from an
+   * array being empty, and `--json` has no other way to tell.
+   */
+  readonly grounded: boolean;
+}
+
+/**
+ * Score floor for a chunk to count as a match, stated here rather than
+ * inherited.
+ *
+ * `AiChatWithKbTask` defaults it to the same 0.3, but the floor is what decides
+ * whether an answer is grounded, so `sec ask` names its own instead of moving
+ * whenever the library's default does.
+ */
+const ASK_MIN_SCORE = 0.3;
+
+/**
+ * What to say when nothing was retrieved.
+ *
+ * The model is not asked and its text is not printed. A 350M local model is the
+ * default path — deliberately, so `ask` works with no API key — and it will
+ * answer a question about Apple's revenue from memory however firmly the system
+ * prompt tells it not to. An instruction is a request; this is the guard.
+ */
+function ungroundedAnswer(indexedChunks: number): string {
+  if (indexedChunks === 0) {
+    return (
+      "Nothing is indexed, so there is no filing text to answer from.\n\n" +
+      "Run `sec index` to build the index — or `sec update documents` first, if no " +
+      "filings have been converted yet."
+    );
+  }
+  return (
+    `Nothing in the index matched this question closely enough to answer from ` +
+    `(${indexedChunks} chunk(s) indexed, none scoring at or above ${ASK_MIN_SCORE}).\n\n` +
+    "Try rewording it, widen the scope flags, or run `sec index` to cover more filings."
+  );
 }
 
 /**
@@ -89,6 +130,7 @@ export class AskTask extends Task<TaskPorts<AskTaskInput>, TaskPorts<AskTaskOutp
       references: Type.Array(Type.Unknown()),
       modelId: Type.String(),
       modelReason: Type.String(),
+      grounded: Type.Boolean(),
     });
   }
 
@@ -96,7 +138,7 @@ export class AskTask extends Task<TaskPorts<AskTaskInput>, TaskPorts<AskTaskOutp
     // Resolved before the KB is touched, so a machine with no usable model says
     // so before it spends time embedding a query.
     const model = secGenerationModel();
-    await getSecKnowledgeBase();
+    const kb = await getSecKnowledgeBase();
     if (!globalServiceRegistry.has(HUMAN_CONNECTOR)) {
       globalServiceRegistry.registerInstance(HUMAN_CONNECTOR, ONE_SHOT_CONNECTOR);
     }
@@ -114,6 +156,7 @@ export class AskTask extends Task<TaskPorts<AskTaskInput>, TaskPorts<AskTaskOutp
       // one-shot `sec ask` has not registered and should not need to.
       maxIterations: 1,
       topKPerKb: input.topK ?? 8,
+      minScore: ASK_MIN_SCORE,
       prompt: scope === undefined ? input.question : `${input.question}\n\n(${scope})`,
       system:
         "You answer questions about SEC filings using only the retrieved excerpts. " +
@@ -131,17 +174,33 @@ export class AskTask extends Task<TaskPorts<AskTaskInput>, TaskPorts<AskTaskOutp
       }[];
     };
 
+    const references = (result.references ?? []).map((reference) => ({
+      index: reference.index,
+      title: reference.title,
+      url: reference.url,
+      snippet: reference.snippet,
+      score: reference.score,
+    }));
+
+    // Retrieved nothing means the model answered from memory, and the answer is
+    // about SEC filings the database does not contain. Suppressed here rather
+    // than in the renderer, so `--json` consumers get the same refusal.
+    if (references.length === 0) {
+      return {
+        answer: ungroundedAnswer(await kb.chunkCount()),
+        references: [],
+        modelId: model.modelId,
+        modelReason: model.reason,
+        grounded: false,
+      };
+    }
+
     return {
       answer: result.text,
-      references: (result.references ?? []).map((reference) => ({
-        index: reference.index,
-        title: reference.title,
-        url: reference.url,
-        snippet: reference.snippet,
-        score: reference.score,
-      })),
+      references,
       modelId: model.modelId,
       modelReason: model.reason,
+      grounded: true,
     };
   }
 }
