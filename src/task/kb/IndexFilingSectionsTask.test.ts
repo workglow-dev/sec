@@ -5,15 +5,17 @@
  */
 
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { globalServiceRegistry } from "workglow";
+import type { DocumentNode } from "workglow";
+import { Document, globalServiceRegistry, NodeKind } from "workglow";
 import { withSqliteDb } from "../../config/testing/withSqliteDb";
-import { resetSecKnowledgeBaseForTesting } from "../../kb/secKnowledgeBase";
+import { getSecKnowledgeBase, resetSecKnowledgeBaseForTesting } from "../../kb/secKnowledgeBase";
 import {
   FILING_DOCUMENT_REPOSITORY_TOKEN,
   type FilingDocument,
 } from "../../storage/document/FilingDocumentSchema";
 import { FILING_SECTION_REPOSITORY_TOKEN } from "../../storage/document/FilingSectionSchema";
 import { IndexFilingSectionsTask } from "./IndexFilingSectionsTask";
+import { kbDocIdFor } from "./selectDocumentsToIndex";
 
 const header = (index: number, filingDate: string): FilingDocument => ({
   cik: 320193,
@@ -54,30 +56,55 @@ describe("IndexFilingSectionsTask selection", () => {
     }
   };
 
-  it("streams the converted filings rather than loading every header first", async () => {
+  /** Mark a filing as already in the knowledge base. */
+  const markIndexed = async (index: number): Promise<void> => {
+    const kb = await getSecKnowledgeBase();
+    const title = `Filing ${index}`;
+    const root = { kind: NodeKind.DOCUMENT, title, children: [] } as unknown as DocumentNode;
+    const docId = kbDocIdFor(`0000320193-26-${String(index).padStart(6, "0")}`, "primary.htm");
+    await kb.upsertDocument(new Document(root, { title } as never, [], docId));
+  };
+
+  it("picks the work in the database rather than reading headers to sift them", async () => {
     await seed(5);
     const repo = globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN);
-    const getAll = vi.spyOn(repo, "getAll");
-
-    const out = await new IndexFilingSectionsTask().run({ limit: 0 });
-
-    // `getAll()` on the unscoped path is the whole converted corpus in memory
-    // — hundreds of thousands of rows to take the first few of.
-    expect(getAll).not.toHaveBeenCalled();
-    expect(out).toMatchObject({ indexed: 0, truncated: true });
-  });
-
-  it("streams a scoped selection by page too", async () => {
-    await seed(3);
-    const repo = globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN);
-    const query = vi.spyOn(repo, "query");
-    const queryPage = vi.spyOn(repo, "queryPage");
+    const reads = (["getAll", "records", "query", "queryPage"] as const).map((method) =>
+      vi.spyOn(repo, method)
+    );
 
     const out = await new IndexFilingSectionsTask().run({ cik: 320193, limit: 0 });
 
-    expect(query).not.toHaveBeenCalled();
-    expect(queryPage).toHaveBeenCalled();
+    // Reading headers to decide is the whole converted corpus crossing the
+    // process boundary to take the first few of it.
+    for (const read of reads) expect(read).not.toHaveBeenCalled();
     expect(out.truncated).toBe(true);
+  });
+
+  it("still reports what is already indexed once nothing is left to do", async () => {
+    // The count `sec index` prints, and what makes it suggest asking a question
+    // rather than converting filings there are none of.
+    await seed(3);
+    for (const index of [0, 1, 2]) await markIndexed(index);
+
+    const out = await new IndexFilingSectionsTask().run({ limit: 5 });
+
+    expect(out).toMatchObject({ indexed: 0, sections: 0, skipped: 3, truncated: false });
+  });
+
+  it("spends its limit on filings that need work, not on ones already indexed", async () => {
+    // The defect: `limit` counted filings INDEXED, and an already-indexed one
+    // was skipped without counting toward it — so a small limit on an indexed
+    // corpus read every row and probed the knowledge base once per row.
+    await seed(4);
+    await markIndexed(0);
+    await markIndexed(1);
+    const kb = await getSecKnowledgeBase();
+    const getDocument = vi.spyOn(kb, "getDocument");
+
+    const out = await new IndexFilingSectionsTask().run({ limit: 2 });
+
+    expect(getDocument).not.toHaveBeenCalled();
+    expect(out).toMatchObject({ skipped: 2, truncated: false });
   });
 
   it("reports no truncation when the scope leaves nothing to index", async () => {

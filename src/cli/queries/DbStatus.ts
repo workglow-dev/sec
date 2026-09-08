@@ -1,6 +1,7 @@
 import type { ServiceToken } from "workglow";
 import { globalServiceRegistry } from "workglow";
 import { SEC_STORAGE_REGISTRY } from "../../config/storageRegistry";
+import { getKbTableStats } from "../../kb/kbTableStats";
 import { CIK_NAME_REPOSITORY_TOKEN } from "../../storage/entity/CikNameSchema";
 import { ENTITY_REPOSITORY_TOKEN } from "../../storage/entity/EntitySchema";
 import { COMPANY_FACTS_REPOSITORY_TOKEN } from "../../storage/facts/CompanyFactsSchema";
@@ -243,5 +244,9 @@ export async function getDbStats(
       `counted ${table} (${current}/${tables.length})`
     );
   }
+  // Appended rather than merged into TABLE_TOKENS: the knowledge base's tables
+  // have no repository token to count through, and leaving them out is what
+  // left an operator no way to see whether an index existed at all.
+  results.push(...(await getKbTableStats()));
   return results;
 }

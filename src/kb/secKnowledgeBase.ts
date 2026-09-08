@@ -24,7 +24,12 @@ import { SecCliConfigurationError } from "../config/EnvToDI";
 import { secEmbeddingModel, SEC_EMBEDDING_DIMENSIONS } from "../config/models";
 import { SEC_DB_TYPE } from "../config/tokens";
 import { getDb } from "../util/db";
-import { KB_CHUNK_TABLE, KB_DOCUMENT_TABLE, KB_INDEX_TABLE } from "./secKbTables";
+import {
+  KB_CHUNK_TABLE,
+  KB_DOCUMENT_TABLE,
+  KB_INDEX_TABLE,
+  SEC_KB_TABLE_NAMES,
+} from "./secKbTables";
 
 /** The one knowledge base, under the id `sec ask` resolves it by. */
 export const SEC_KB_ID = "sec";
@@ -99,6 +104,21 @@ async function requireMatchingEmbeddingModel(
 }
 
 /**
+ * Which of the knowledge base's tables the database does not have.
+ *
+ * Read off `sqlite_master` rather than by probing each storage: a `SELECT`
+ * against a missing table throws, and distinguishing "no such table" from a
+ * real failure by its message is the sort of guess this can simply avoid.
+ */
+function missingKbTables(db: { prepare(sql: string): { all(): unknown[] } }): string[] {
+  const rows = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table'").all() as {
+    name: string;
+  }[];
+  const present = new Set(rows.map((row) => row.name));
+  return SEC_KB_TABLE_NAMES.filter((table) => !present.has(table));
+}
+
+/**
  * The knowledge base `sec index` fills and `sec ask` reads.
  *
  * Built directly rather than through `createKnowledgeBase`, which wires
@@ -148,9 +168,25 @@ export async function getSecKnowledgeBase(): Promise<KnowledgeBase> {
     SEC_EMBEDDING_DIMENSIONS
   );
   const index = new SqliteTabularStorage(db, KB_INDEX_TABLE, KbIndexSchema, KbIndexPrimaryKeyNames);
-  await documents.setupDatabase();
-  await chunks.setupDatabase();
-  await index.setupDatabase();
+  // `setupDatabase()` is DDL, and these three are the only tables that reach it
+  // without passing through `createStorage` — so no `ReadOnlyTabularStorage`
+  // wrapper stands between a dry run and a `CREATE TABLE`. A dry run against an
+  // index that already exists is the ordinary case and reads it; one that would
+  // have to build the index says so instead of quietly building it.
+  if (isDryRun()) {
+    const missing = missingKbTables(db);
+    if (missing.length > 0) {
+      throw new SecCliConfigurationError(
+        `This is a dry run, and the knowledge base has no ${missing.join(", ")} ` +
+          `table yet. Creating one would be a change, so there is nothing to read: ` +
+          `run \`sec index\` without --dry-run to build the index first.`
+      );
+    }
+  } else {
+    await documents.setupDatabase();
+    await chunks.setupDatabase();
+    await index.setupDatabase();
+  }
 
   const model = secEmbeddingModel();
   // Before the knowledge base is handed out, so a mismatch cannot be discovered
