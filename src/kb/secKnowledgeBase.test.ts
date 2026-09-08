@@ -158,8 +158,8 @@ describe("the SEC knowledge base's tables and `db reset`", () => {
 describe("the SEC knowledge base's chunk search", () => {
   withSqliteDb("kb_search", []);
 
-  const unit = (index: number): Float32Array => {
-    const vector = new Float32Array(secEmbeddingDimensions());
+  const unit = async (index: number): Promise<Float32Array> => {
+    const vector = new Float32Array(await secEmbeddingDimensions());
     vector[index] = 1;
     return vector;
   };
@@ -177,7 +177,7 @@ describe("the SEC knowledge base's chunk search", () => {
     await kb.upsertChunk({
       chunk_id: "north",
       doc_id: "doc-1",
-      vector: unit(0),
+      vector: await unit(0),
       metadata: {
         chunkId: "north",
         doc_id: "doc-1",
@@ -189,7 +189,7 @@ describe("the SEC knowledge base's chunk search", () => {
     await kb.upsertChunk({
       chunk_id: "east",
       doc_id: "doc-1",
-      vector: unit(1),
+      vector: await unit(1),
       metadata: {
         chunkId: "east",
         doc_id: "doc-1",
@@ -199,7 +199,7 @@ describe("the SEC knowledge base's chunk search", () => {
       },
     });
 
-    const hits = await kb.similaritySearch(unit(1), { topK: 2 });
+    const hits = await kb.similaritySearch(await unit(1), { topK: 2 });
     expect(hits.map((hit) => hit.chunk_id)).toEqual(["east", "north"]);
   });
 });

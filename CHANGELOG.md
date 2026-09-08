@@ -71,9 +71,12 @@ they care about is running `embarc-data`, which is unaffected.
   literal `768` used both to create the vector column and to check it, so the
   guard was `768 === 768` on every path; a genuinely narrower model opened the
   knowledge base without complaint and failed on the first chunk with a library
-  message naming neither the variable nor the model. Ten models' widths are
-  recorded, `SEC_EMBEDDING_DIMENSIONS` states one that is not, and an unknown
-  width refuses at open — before any table is created.
+  message naming neither the variable nor the model. The width now comes from
+  the model's own published config — the same file the runtime loads the
+  architecture from, read once and remembered per repo, so a model nobody
+  listed here opens and nothing has to be kept in step. A model with no config
+  to read takes `SEC_EMBEDDING_DIMENSIONS`, and a width that cannot be
+  established at all refuses at open, before any table is created.
 
 ## 0.1.5
 

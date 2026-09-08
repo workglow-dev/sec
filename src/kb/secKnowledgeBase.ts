@@ -132,7 +132,7 @@ export async function getSecKnowledgeBase(): Promise<KnowledgeBase> {
 
   // Resolved before any DDL: an unknown model refuses here rather than after
   // the column has been created at a width its vectors will not have.
-  const dimensions = secEmbeddingDimensions();
+  const dimensions = await secEmbeddingDimensions();
 
   const db = getDb();
   // Tabular, not vector: the document table holds a filing's metadata and its
