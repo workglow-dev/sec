@@ -30,6 +30,8 @@ they care about is running `embarc-data`, which is unaffected.
 - **The eval harness** and the model-call trace reader.
 - Query leaves for the tables that went: `offerings`, `crowdfunding`, `reg-a`,
   `persons`.
+- The `better-sqlite3` devDependency and its `trustedDependencies` entry,
+  unused since `@workglow/sqlite` moved to `node:sqlite`.
 
 ### Added
 
@@ -46,6 +48,18 @@ they care about is running `embarc-data`, which is unaffected.
   run next. Bare `sec` runs it.
 - **`sec read`** — a filing as markdown, from the database or straight off a
   local HTML file. `--trace` replaces the `verify` group.
+- **`engines: {"node": ">=24", "bun": ">=1.4.0"}`.** The floor `node:sqlite`
+  needs was documented and not declared, so `npm i -g @workglow/sec` on Node 22
+  installed cleanly and failed later, reading as a storage bug rather than a
+  version error.
+- **`release` derives the bump.** It cut a patch unconditionally, and on a 0.x
+  line the minor is the break slot — so a heading like this one would have gone
+  out as 0.1.6 and resolved for anyone on `^0.1.5`. It now runs `bunset --auto`
+  behind a shared `release-checks` gate set, which reads the bump off the
+  commits and off a diff of `package.json` against the last tag. The `engines`
+  field above is exactly what that diff is for: a runtime floor that appeared is
+  a break no commit message describes, and it raises this release to the minor
+  on its own.
 
 ### Changed
 
@@ -67,6 +81,11 @@ they care about is running `embarc-data`, which is unaffected.
 - `typecheck` covers src, scripts and tests in one pass; `typecheck-tests` and
   `tsconfig.test.json` are gone. CI runs it before the build.
 - `sec fetch golden-fixtures` is now `bun run check-fixtures`.
+- `isUniqueConstraintError` matches `node:sqlite`'s numeric `errcode` (2067
+  UNIQUE, 1555 PRIMARY KEY). That driver reports every failure as
+  `code: "ERR_SQLITE_ERROR"`, so the `"SQLITE_CONSTRAINT_UNIQUE"` string — a
+  `better-sqlite3` spelling — never matched, leaving SQLite with the error
+  message as its only signal.
 - **The embedding width is resolved from the model, not assumed.** It was a
   literal `768` used both to create the vector column and to check it, so the
   guard was `768 === 768` on every path; a genuinely narrower model opened the
