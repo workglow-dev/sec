@@ -143,6 +143,15 @@ export function addAskCommands(program: Command): void {
             return;
           }
 
+          // An ungrounded run is not an answer, so it is not printed as one:
+          // no model attribution line, and the next step is the command that
+          // fills the index rather than a follow-up question.
+          if (!out.grounded) {
+            console.log(`\n${out.answer}\n`);
+            suggest({ command: "sec index", why: "build the index this question needs" });
+            return;
+          }
+
           console.log(`\n${out.answer}\n`);
           for (const reference of out.references) {
             console.log(`  [${reference.index}] ${reference.title}`);
