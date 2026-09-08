@@ -67,6 +67,16 @@ they care about is running `embarc-data`, which is unaffected.
 - `typecheck` covers src, scripts and tests in one pass; `typecheck-tests` and
   `tsconfig.test.json` are gone. CI runs it before the build.
 - `sec fetch golden-fixtures` is now `bun run check-fixtures`.
+- **`--dry-run` no longer creates the knowledge-base tables.** Those three are
+  built lazily against the `getDb()` connection rather than through
+  `createStorage`, so no `ReadOnlyTabularStorage` wrapper stood between a dry
+  run and three `CREATE TABLE`s. A dry run against an existing index still reads
+  it; one that would have to build the index now says so and names `sec index`.
+- **`db stats` reports the knowledge-base tables.** They have no repository
+  token to count through, so the report derived from the storage registry could
+  not see them and an operator had no way to tell whether an index existed. They
+  are counted directly and appended, `n/a` before the index is built, and
+  omitted entirely on a backend where the index cannot exist.
 
 ## 0.1.5
 
