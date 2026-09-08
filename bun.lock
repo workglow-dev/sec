@@ -26,7 +26,7 @@
         "@types/bun": "1.4.0",
         "@types/pg": "^8.23.1",
         "@types/xml2js": "^0.4.14",
-        "bunset": "1.0.15",
+        "bunset": "1.1.1",
         "concurrently": "^10.0.5",
         "oxfmt": "0.66.0",
         "oxlint": "^1.81.0",
@@ -547,7 +547,7 @@
 
     "bun-types": ["bun-types@1.4.0", "", { "dependencies": { "@types/node": "*" } }, "sha512-iIKw23BspnQQYd3prITOBxeUsxBHnwzX6YJfGMuNOZzeNcMmVqzIIVGRm1l69ogaPQmb4wB6BN8mA5bE9YuC5Q=="],
 
-    "bunset": ["bunset@1.0.15", "", { "bin": { "bunset": "src/index.ts" } }, "sha512-hqkm9dKdf1tauHBiStnrDXiMel2EaRnNi0pR3J1sMDo/CffNkpVhjgWRMqP3k0gbaM5WEl9ZboFihWY9/JI9Og=="],
+    "bunset": ["bunset@1.1.1", "", { "bin": { "bunset": "src/index.ts" } }, "sha512-BiTmmA1OncSh44/9Fen6u/ZvLEVPowxFYMYrtFsmxFnYxKp9cvmDPy5HV0ZXcCM1qpKrBIW84j84jtVgkvq5RQ=="],
 
     "bytes": ["bytes@3.1.2", "", {}, "sha512-/Nf7TyzTx6S3yRJObOAV7956r8cr2+Oj8AC5dt8wSP3BQAoeX58NoHyCU8P8zGkNXStjTSi6fzO6F0pBdcYbEg=="],
 

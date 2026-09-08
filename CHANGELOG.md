@@ -52,11 +52,14 @@ they care about is running `embarc-data`, which is unaffected.
   needs was documented and not declared, so `npm i -g @workglow/sec` on Node 22
   installed cleanly and failed later, reading as a storage bug rather than a
   version error.
-- **`release-minor`.** `release` cut a patch unconditionally, and on a 0.x line
-  the minor is the break slot. Both scripts now run one shared `release-checks`
-  gate set and differ only in the bump, so shipping a heading like this one as a
-  patch takes choosing the wrong script rather than forgetting a flag.
-  **This release goes out through `release-minor`.**
+- **`release` derives the bump.** It cut a patch unconditionally, and on a 0.x
+  line the minor is the break slot — so a heading like this one would have gone
+  out as 0.1.6 and resolved for anyone on `^0.1.5`. It now runs `bunset --auto`
+  behind a shared `release-checks` gate set, which reads the bump off the
+  commits and off a diff of `package.json` against the last tag. The `engines`
+  field above is exactly what that diff is for: a runtime floor that appeared is
+  a break no commit message describes, and it raises this release to the minor
+  on its own.
 
 ### Changed
 

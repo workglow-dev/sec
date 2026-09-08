@@ -13,8 +13,7 @@
   "description": "A worked example of the Workglow libraries: SEC EDGAR and Form ADV ingestion, filing-to-markdown conversion, and retrieval-grounded question answering over what filings say.",
   "scripts": {
     "release-checks": "bun run format && bun run lint && bun run typecheck && bun run build && bun run prepack-check",
-    "release": "bun run release-checks && bunset --patch --push --commit --tag",
-    "release-minor": "bun run release-checks && bunset --minor --push --commit --tag",
+    "release": "bun run release-checks && bunset --auto --push --commit --tag",
     "prepack-check": "bun ./scripts/checkPackedContents.ts",
     "dev": "concurrently -c 'auto' -n 'sec:' 'bun:dev-*'",
     "dev-sec": "bun build --watch --target=bun --sourcemap=external --packages=external --outfile ./dist/sec.js ./src/sec.ts",
@@ -73,7 +72,7 @@
     "@types/bun": "1.4.0",
     "@types/pg": "^8.23.1",
     "@types/xml2js": "^0.4.14",
-    "bunset": "1.0.15",
+    "bunset": "1.1.1",
     "concurrently": "^10.0.5",
     "oxfmt": "0.66.0",
     "oxlint": "^1.81.0",

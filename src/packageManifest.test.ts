@@ -84,25 +84,38 @@ describe("binary-only distribution", () => {
 });
 
 /**
- * On a 0.x line the minor is the break slot, so a consumer on `^0.1.5`
- * resolves a patch on the next install. `release` cuts a patch and cannot know
- * whether the changelog's leading heading says BREAKING; what it can do is
- * offer the minor path as a first-class script rather than leaving it to be
- * remembered as a flag.
+ * On a 0.x line the minor is the break slot, so a consumer on `^0.1.5` resolves
+ * a patch on their next install. `release` used to cut a patch unconditionally
+ * and offer the minor as a second script, which left the number to whoever
+ * remembered which one to type.
+ *
+ * `--auto` derives it instead — from the commits, and from a diff of this
+ * manifest against the one at the last tag, which raises the bump to the break
+ * slot when the package lost an entry point or gained a runtime floor. That is
+ * the class of break no commit message describes, because nothing about it
+ * looks like a breaking edit.
  */
 describe("release scripts", () => {
-  it("offers both bump levels over one set of gates", () => {
-    expect(manifest.scripts?.release).toContain("--patch");
-    expect(manifest.scripts?.["release-minor"]).toContain("--minor");
-    for (const script of ["release", "release-minor"]) {
-      expect(manifest.scripts?.[script]).toContain("release-checks");
-    }
+  it("derives the bump rather than naming one", () => {
+    const release = manifest.scripts?.release ?? "";
+    expect(release).toContain("--auto");
+    // A second script that names a level is the choice `--auto` removes, back
+    // in the place it was made from.
+    expect(release).not.toMatch(/--(patch|minor|major)\b/);
+    expect(Object.keys(manifest.scripts ?? {})).not.toContain("release-minor");
   });
 
-  it("runs the same gates before either bump", () => {
+  it("runs the gates before the bump", () => {
+    expect(manifest.scripts?.release).toContain("release-checks");
     const checks = manifest.scripts?.["release-checks"] ?? "";
     for (const gate of ["format", "lint", "typecheck", "build", "prepack-check"]) {
       expect(checks).toContain(gate);
     }
+  });
+
+  it("pins a bunset that has `--auto`", () => {
+    // `--auto` arrived in 1.1.0 and the 0.x bump table it uses was corrected in
+    // 1.1.1. An older pin does not fail loudly — it takes the flag as unknown.
+    expect(manifest.devDependencies?.bunset).toBe("1.1.1");
   });
 });

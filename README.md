@@ -139,21 +139,22 @@ shape — including that it stays binary-only.
 ### Cutting a release
 
 `bun run release-checks` is the gate set (format, lint, typecheck, build, packed
-contents). Two scripts run it and then bump:
+contents). One script runs it and then bumps:
 
 ```sh
-bun run release          # patch
-bun run release-minor    # minor
+bun run release
 ```
 
-On a 0.x line the minor is the break slot — a consumer on `^0.1.5` resolves a
-patch on their next install — so anything the changelog opens with `BREAKING`
-goes out through `release-minor`.
+The bump is derived, not chosen. `bunset --auto` reads it off the commits since
+the last tag — and off a diff of `package.json` against the one at that tag,
+which is what catches the break no commit message describes: a lost `exports`
+subpath or `bin` entry, or an `engines` floor that appeared or moved up. On a
+0.x line a break lands in the **minor**, because `^0.1.5` already admits only
+`0.1.x`; a feature lands in the patch, so the two stay distinguishable in the
+number.
 
-`bunset` already refuses `--patch` when a **commit** carries a Conventional
-Commits break marker (`feat!:`, or a `BREAKING CHANGE:` footer). That guard only
-sees commit messages, so a break recorded solely as a changelog heading passes
-it. Mark the commit when you can; choose the script when you cannot.
+A break recorded *only* as a changelog heading is still invisible to it — mark
+the commit (`feat!:`, or a `BREAKING CHANGE:` footer) when there is one.
 
 See `ARCHITECTURE.md` for the pipeline end to end, and `docs/fetch-and-storage.md`
 for the fetch layer.
