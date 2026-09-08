@@ -67,6 +67,13 @@ they care about is running `embarc-data`, which is unaffected.
 - `typecheck` covers src, scripts and tests in one pass; `typecheck-tests` and
   `tsconfig.test.json` are gone. CI runs it before the build.
 - `sec fetch golden-fixtures` is now `bun run check-fixtures`.
+- **The embedding width is resolved from the model, not assumed.** It was a
+  literal `768` used both to create the vector column and to check it, so the
+  guard was `768 === 768` on every path; a genuinely narrower model opened the
+  knowledge base without complaint and failed on the first chunk with a library
+  message naming neither the variable nor the model. Ten models' widths are
+  recorded, `SEC_EMBEDDING_DIMENSIONS` states one that is not, and an unknown
+  width refuses at open — before any table is created.
 
 ## 0.1.5
 

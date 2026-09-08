@@ -10,7 +10,7 @@ import { resetAllDatabases } from "../config/resetAllDatabases";
 import { resetDependencyInjectionsForTesting } from "../config/TestingDI";
 import { withSqliteDb } from "../config/testing/withSqliteDb";
 import { SEC_DB_TYPE } from "../config/tokens";
-import { SEC_EMBEDDING_DIMENSIONS } from "../config/models";
+import { secEmbeddingDimensions } from "../config/models";
 import { getDb } from "../util/db";
 import { KB_INDEX_TABLE, SEC_KB_TABLE_NAMES } from "./secKbTables";
 import { getSecKnowledgeBase, resetSecKnowledgeBaseForTesting } from "./secKnowledgeBase";
@@ -159,7 +159,7 @@ describe("the SEC knowledge base's chunk search", () => {
   withSqliteDb("kb_search", []);
 
   const unit = (index: number): Float32Array => {
-    const vector = new Float32Array(SEC_EMBEDDING_DIMENSIONS);
+    const vector = new Float32Array(secEmbeddingDimensions());
     vector[index] = 1;
     return vector;
   };
@@ -201,5 +201,41 @@ describe("the SEC knowledge base's chunk search", () => {
 
     const hits = await kb.similaritySearch(unit(1), { topK: 2 });
     expect(hits.map((hit) => hit.chunk_id)).toEqual(["east", "north"]);
+  });
+});
+
+/**
+ * The width refusal has to land before any DDL. Discovering it afterwards is
+ * the failure this replaced — the column already exists at a width the model's
+ * vectors will not have, and the error arrives from inside the library on the
+ * first chunk.
+ */
+describe("an embedding model of unknown width", () => {
+  withSqliteDb("kb_width", []);
+
+  beforeEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    process.env.SEC_EMBEDDING_MODEL = "onnx:some-org/some-unlisted-model:q8";
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
+  });
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    delete process.env.SEC_EMBEDDING_MODEL;
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
+  });
+
+  it("refuses before creating a single table", async () => {
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/SEC_EMBEDDING_MODEL/);
+
+    const rows = getDb()
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'kb_%'")
+      .all() as { name: string }[];
+    expect(rows).toEqual([]);
+  });
+
+  it("opens once the width is stated", async () => {
+    process.env.SEC_EMBEDDING_DIMENSIONS = "384";
+    await expect(getSecKnowledgeBase()).resolves.toBeDefined();
   });
 });
