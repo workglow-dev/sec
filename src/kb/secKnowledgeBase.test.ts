@@ -9,7 +9,7 @@ import { globalServiceRegistry } from "workglow";
 import { resetAllDatabases } from "../config/resetAllDatabases";
 import { resetDependencyInjectionsForTesting } from "../config/TestingDI";
 import { withSqliteDb } from "../config/testing/withSqliteDb";
-import { SEC_DB_TYPE } from "../config/tokens";
+import { SEC_DB_TYPE, SEC_DRY_RUN } from "../config/tokens";
 import { SEC_EMBEDDING_DIMENSIONS } from "../config/models";
 import { getDb } from "../util/db";
 import { KB_INDEX_TABLE, SEC_KB_TABLE_NAMES } from "./secKbTables";
@@ -201,5 +201,72 @@ describe("the SEC knowledge base's chunk search", () => {
 
     const hits = await kb.similaritySearch(unit(1), { topK: 2 });
     expect(hits.map((hit) => hit.chunk_id)).toEqual(["east", "north"]);
+  });
+});
+
+/**
+ * `--dry-run` promises to show what would happen without changing anything.
+ * These three tables are built lazily against the `getDb()` connection rather
+ * than through `createStorage`, so neither guard that protects every other
+ * table reaches them: no `ReadOnlyTabularStorage` wrapper, and the `isDryRun()`
+ * in this module guarded only the `kb_index` row write, several lines below the
+ * three `CREATE TABLE`s.
+ */
+describe("the knowledge base under --dry-run", () => {
+  withSqliteDb("kb_dry", []);
+
+  function kbTablesOnDisk(): string[] {
+    const rows = getDb()
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'kb_%'")
+      .all() as { name: string }[];
+    return rows.map((row) => row.name).sort();
+  }
+
+  beforeEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    delete process.env.SEC_EMBEDDING_MODEL;
+  });
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    delete process.env.SEC_EMBEDDING_MODEL;
+  });
+
+  it("creates no table when the index does not exist yet", async () => {
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/dry run/i);
+
+    expect(kbTablesOnDisk()).toEqual([]);
+  });
+
+  it("names the command that would build the index", async () => {
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/sec index/);
+  });
+
+  it("opens an index that already exists, and still writes nothing", async () => {
+    // A dry run against a real database is the normal case: the tables are
+    // there, and the run must be allowed to read them.
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    await getSecKnowledgeBase();
+    await resetSecKnowledgeBaseForTesting();
+    expect(kbTablesOnDisk()).toEqual(SEC_KB_TABLE_NAMES.toSorted());
+
+    getDb().exec(`DELETE FROM ${KB_INDEX_TABLE}`);
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+
+    await expect(getSecKnowledgeBase()).resolves.toBeDefined();
+    const rows = getDb().prepare(`SELECT COUNT(*) AS n FROM ${KB_INDEX_TABLE}`).all() as {
+      n: number;
+    }[];
+    expect(rows[0]?.n).toBe(0);
+  });
+
+  it("still creates the tables when this is not a dry run", async () => {
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    await getSecKnowledgeBase();
+    expect(kbTablesOnDisk()).toEqual(SEC_KB_TABLE_NAMES.toSorted());
   });
 });
