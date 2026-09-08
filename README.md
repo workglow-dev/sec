@@ -123,8 +123,37 @@ bun run lint          # oxlint + type-aware rules
 bun run format        # oxfmt
 ```
 
-Node 24 and Bun 1.4+. `node:sqlite` is what backs the SQLite storage, and it is
-neither stable nor unflagged below those.
+Node 24 and Bun 1.4+, declared as `engines` so a lower Node fails at install
+rather than later inside `node:sqlite`. `node:sqlite` is what backs the SQLite
+storage, and it is neither stable nor unflagged below those.
+
+### The package is two binaries, not a library
+
+`package.json` carries `bin` and no `exports`, `main` or `types`. That is the
+shape on purpose: the re-founding retired the library surface, both binaries
+bundle their dependencies, and `import ... from "@workglow/sec"` is not something
+this package offers. A manifest with no import entry point normally reads as a
+field someone deleted by mistake, so `src/packageManifest.test.ts` asserts the
+shape — including that it stays binary-only.
+
+### Cutting a release
+
+`bun run release-checks` is the gate set (format, lint, typecheck, build, packed
+contents). Two scripts run it and then bump:
+
+```sh
+bun run release          # patch
+bun run release-minor    # minor
+```
+
+On a 0.x line the minor is the break slot — a consumer on `^0.1.5` resolves a
+patch on their next install — so anything the changelog opens with `BREAKING`
+goes out through `release-minor`.
+
+`bunset` already refuses `--patch` when a **commit** carries a Conventional
+Commits break marker (`feat!:`, or a `BREAKING CHANGE:` footer). That guard only
+sees commit messages, so a break recorded solely as a changelog heading passes
+it. Mark the commit when you can; choose the script when you cannot.
 
 See `ARCHITECTURE.md` for the pipeline end to end, and `docs/fetch-and-storage.md`
 for the fetch layer.

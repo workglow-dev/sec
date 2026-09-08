@@ -30,6 +30,8 @@ they care about is running `embarc-data`, which is unaffected.
 - **The eval harness** and the model-call trace reader.
 - Query leaves for the tables that went: `offerings`, `crowdfunding`, `reg-a`,
   `persons`.
+- The `better-sqlite3` devDependency and its `trustedDependencies` entry,
+  unused since `@workglow/sqlite` moved to `node:sqlite`.
 
 ### Added
 
@@ -46,6 +48,15 @@ they care about is running `embarc-data`, which is unaffected.
   run next. Bare `sec` runs it.
 - **`sec read`** — a filing as markdown, from the database or straight off a
   local HTML file. `--trace` replaces the `verify` group.
+- **`engines: {"node": ">=24", "bun": ">=1.4.0"}`.** The floor `node:sqlite`
+  needs was documented and not declared, so `npm i -g @workglow/sec` on Node 22
+  installed cleanly and failed later, reading as a storage bug rather than a
+  version error.
+- **`release-minor`.** `release` cut a patch unconditionally, and on a 0.x line
+  the minor is the break slot. Both scripts now run one shared `release-checks`
+  gate set and differ only in the bump, so shipping a heading like this one as a
+  patch takes choosing the wrong script rather than forgetting a flag.
+  **This release goes out through `release-minor`.**
 
 ### Changed
 
@@ -67,6 +78,11 @@ they care about is running `embarc-data`, which is unaffected.
 - `typecheck` covers src, scripts and tests in one pass; `typecheck-tests` and
   `tsconfig.test.json` are gone. CI runs it before the build.
 - `sec fetch golden-fixtures` is now `bun run check-fixtures`.
+- `isUniqueConstraintError` matches `node:sqlite`'s numeric `errcode` (2067
+  UNIQUE, 1555 PRIMARY KEY). That driver reports every failure as
+  `code: "ERR_SQLITE_ERROR"`, so the `"SQLITE_CONSTRAINT_UNIQUE"` string — a
+  `better-sqlite3` spelling — never matched, leaving SQLite with the error
+  message as its only signal.
 
 ## 0.1.5
 
