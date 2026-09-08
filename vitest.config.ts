@@ -73,7 +73,7 @@ export default defineConfig({
     // fork pool selected below.)
     isolate: true,
     // Run each test file in its own forked process (not a worker thread). Forks
-    // give better isolation for native modules (better-sqlite3, onnxruntime)
+    // give better isolation for native modules (onnxruntime)
     // and match how a real `sec` CLI subprocess sees the module graph, at the
     // cost of slower cold starts.
     pool: "forks",

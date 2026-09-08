@@ -123,8 +123,38 @@ bun run lint          # oxlint + type-aware rules
 bun run format        # oxfmt
 ```
 
-Node 24 and Bun 1.4+. `node:sqlite` is what backs the SQLite storage, and it is
-neither stable nor unflagged below those.
+Node 24 and Bun 1.4+, declared as `engines` so a lower Node fails at install
+rather than later inside `node:sqlite`. `node:sqlite` is what backs the SQLite
+storage, and it is neither stable nor unflagged below those.
+
+### The package is two binaries, not a library
+
+`package.json` carries `bin` and no `exports`, `main` or `types`. That is the
+shape on purpose: the re-founding retired the library surface, both binaries
+bundle their dependencies, and `import ... from "@workglow/sec"` is not something
+this package offers. A manifest with no import entry point normally reads as a
+field someone deleted by mistake, so `src/packageManifest.test.ts` asserts the
+shape — including that it stays binary-only.
+
+### Cutting a release
+
+`bun run release-checks` is the gate set (format, lint, typecheck, build, packed
+contents). One script runs it and then bumps:
+
+```sh
+bun run release
+```
+
+The bump is derived, not chosen. `bunset --auto` reads it off the commits since
+the last tag — and off a diff of `package.json` against the one at that tag,
+which is what catches the break no commit message describes: a lost `exports`
+subpath or `bin` entry, or an `engines` floor that appeared or moved up. On a
+0.x line a break lands in the **minor**, because `^0.1.5` already admits only
+`0.1.x`; a feature lands in the patch, so the two stay distinguishable in the
+number.
+
+A break recorded *only* as a changelog heading is still invisible to it — mark
+the commit (`feat!:`, or a `BREAKING CHANGE:` footer) when there is one.
 
 See `ARCHITECTURE.md` for the pipeline end to end, and `docs/fetch-and-storage.md`
 for the fetch layer.
