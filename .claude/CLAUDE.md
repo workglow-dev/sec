@@ -160,7 +160,8 @@ first few.
 | `SEC_FETCH_MAX_CONCURRENT` | Requests **in flight**, per process (default 4, 1–64) |
 | `SEC_FETCH_TIMEOUT_MS` | Per-attempt timeout — time *without progress*, not elapsed |
 | `SEC_MODEL` | Generation model for `ask`; unset resolves by which API key is present |
-| `SEC_EMBEDDING_MODEL` | Embedding model — changing it invalidates the index |
+| `SEC_EMBEDDING_MODEL` | Embedding model — changing it invalidates the index. Only the pinned default's width is known here; any other model needs `SEC_EMBEDDING_DIMENSIONS` |
+| `SEC_EMBEDDING_DIMENSIONS` | The model's output width, required for any model but the pinned default. The vector column is created at it |
 | `SEC_ONNX_DEVICE` | `cpu` (default) or `webgpu` where there is an adapter |
 | `SEC_FIXTURES_DIR`, `SEC_S1_MOCK_DIR` | Fixture roots |
 

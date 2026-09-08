@@ -86,6 +86,15 @@ they care about is running `embarc-data`, which is unaffected.
   `code: "ERR_SQLITE_ERROR"`, so the `"SQLITE_CONSTRAINT_UNIQUE"` string — a
   `better-sqlite3` spelling — never matched, leaving SQLite with the error
   message as its only signal.
+- **The embedding width is declared beside the model it belongs to.** It was a
+  literal `768` used both to create the vector column and to check it, so the
+  guard was `768 === 768` on every path; a genuinely narrower model opened the
+  knowledge base without complaint and failed on the first chunk with a library
+  message naming neither the variable nor the model. This CLI pins one
+  embedding model and states its width next to it, so the two cannot disagree.
+  Point `SEC_EMBEDDING_MODEL` at anything else — including a cloud endpoint
+  with no local weights — and `SEC_EMBEDDING_DIMENSIONS` becomes required; a
+  width that is not stated refuses at open, before any table is created.
 - **`--dry-run` no longer creates the knowledge-base tables.** Those three are
   built lazily against the `getDb()` connection rather than through
   `createStorage`, so no `ReadOnlyTabularStorage` wrapper stood between a dry

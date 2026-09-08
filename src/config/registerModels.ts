@@ -8,7 +8,7 @@ import { isAbsolute, join } from "node:path";
 import type { ModelRecord, ServiceRegistry } from "workglow";
 import { getGlobalModelRepository, globalServiceRegistry } from "workglow";
 import { SecCliConfigurationError } from "./EnvToDI";
-import { SEC_EMBEDDING_DIMENSIONS, secModelIds } from "./models";
+import { secEmbeddingDimensions, secModelIds } from "./models";
 
 /**
  * Provider discriminators. Mirror the constants the provider packages register
@@ -403,7 +403,7 @@ export function hftModelRecord(modelId: string): ModelRecord {
       // embedding record without it fails AFTER running the model, with the
       // declared width reported as `undefined`.
       ...(embedding
-        ? { native_dimensions: SEC_EMBEDDING_DIMENSIONS, pooling: "mean", normalize: true }
+        ? { native_dimensions: secEmbeddingDimensions(), pooling: "mean", normalize: true }
         : {}),
     },
     metadata: {},

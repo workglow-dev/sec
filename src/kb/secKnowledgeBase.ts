@@ -21,7 +21,7 @@ import {
 } from "workglow";
 import { isDryRun } from "../cli/isDryRun";
 import { SecCliConfigurationError } from "../config/EnvToDI";
-import { secEmbeddingModel, SEC_EMBEDDING_DIMENSIONS } from "../config/models";
+import { secEmbeddingDimensions, secEmbeddingModel } from "../config/models";
 import { SEC_DB_TYPE } from "../config/tokens";
 import { getDb } from "../util/db";
 import {
@@ -150,6 +150,10 @@ export async function getSecKnowledgeBase(): Promise<KnowledgeBase> {
     );
   }
 
+  // Resolved before any DDL: an unknown model refuses here rather than after
+  // the column has been created at a width its vectors will not have.
+  const dimensions = secEmbeddingDimensions();
+
   const db = getDb();
   // Tabular, not vector: the document table holds a filing's metadata and its
   // node tree. Only the chunks carry embeddings.
@@ -165,7 +169,7 @@ export async function getSecKnowledgeBase(): Promise<KnowledgeBase> {
     ChunkVectorStorageSchema,
     ChunkVectorPrimaryKey,
     [],
-    SEC_EMBEDDING_DIMENSIONS
+    dimensions
   );
   const index = new SqliteTabularStorage(db, KB_INDEX_TABLE, KbIndexSchema, KbIndexPrimaryKeyNames);
   // `setupDatabase()` is DDL, and these three are the only tables that reach it
@@ -191,7 +195,7 @@ export async function getSecKnowledgeBase(): Promise<KnowledgeBase> {
   const model = secEmbeddingModel();
   // Before the knowledge base is handed out, so a mismatch cannot be discovered
   // partway through a run that has already embedded chunks into the old space.
-  await requireMatchingEmbeddingModel(index, model, SEC_EMBEDDING_DIMENSIONS);
+  await requireMatchingEmbeddingModel(index, model, dimensions);
 
   const kb = new KnowledgeBase(SEC_KB_ID, documents as never, chunks as never, {
     title: "SEC filings",

@@ -59,7 +59,7 @@ describe("registerSecModels", () => {
     expect(record.provider_config.model_name).toBe("claude-sonnet-5");
   });
 
-  it("builds a routable HFT record", () => {
+  it("builds a routable HFT record", async () => {
     const record = hftModelRecord("onnx:onnx-community/Qwen2.5-0.5B-Instruct");
     expect(record.provider).toBe("HF_TRANSFORMERS_ONNX");
     expect(record.provider_config.model_path).toBe("onnx-community/Qwen2.5-0.5B-Instruct");
@@ -91,7 +91,7 @@ describe("registerSecModels", () => {
     expect(deepSeekModelRecord("deepseek-v4-flash").capabilities).toContain("text.generation");
   });
 
-  it("dispatches secModelRecord by id shape across all providers", () => {
+  it("dispatches secModelRecord by id shape across all providers", async () => {
     expect(secModelRecord("claude-opus-5").provider).toBe("ANTHROPIC");
     expect(secModelRecord("gpt-5.5").provider).toBe("OPENAI");
     expect(secModelRecord("gpt-5.4-mini").provider).toBe("OPENAI");
@@ -159,7 +159,7 @@ describe("registerSecModels", () => {
     });
   });
 
-  it("points a bare org/name id at the prefix it now needs", () => {
+  it("points a bare org/name id at the prefix it now needs", async () => {
     // `org/name` used to route to the local ONNX provider. Listing every legal
     // shape leaves the operator to spot that one of them is their own id plus
     // five characters, which is the single likeliest reason a working
@@ -184,7 +184,7 @@ describe("registerSecModels", () => {
     expect(plain).not.toContain("bare");
   });
 
-  it("rejects empty inference-provider or model segments on gated ids", () => {
+  it("rejects empty inference-provider or model segments on gated ids", async () => {
     for (const id of [
       "hfi:together:",
       "hfi::meta-llama/Llama-3.3-70B-Instruct",
@@ -195,7 +195,7 @@ describe("registerSecModels", () => {
     }
   });
 
-  it("throws on a model id matching no provider shape instead of defaulting to Anthropic", () => {
+  it("throws on a model id matching no provider shape instead of defaulting to Anthropic", async () => {
     // Regression: these used to mint an ANTHROPIC record, so a typo or an
     // unwired provider only surfaced downstream as a `404 model: <id>` from the
     // Anthropic API — the wrong provider's error, well after registration.
@@ -213,13 +213,13 @@ describe("registerSecModels", () => {
     expect(() => secModelRecord("claude--typo")).not.toThrow();
   });
 
-  it("names the offending id and the accepted shapes when it throws", () => {
+  it("names the offending id and the accepted shapes when it throws", async () => {
     expect(() => secModelRecord("deepseek-v4-flash".replace("deepseek", "deapseek"))).toThrow(
       /deapseek-v4-flash.*deepseek-\*/s
     );
   });
 
-  it("routes a deepseek-ai HuggingFace repo id via onnx: to the local ONNX provider, not DeepSeek cloud", () => {
+  it("routes a deepseek-ai HuggingFace repo id via onnx: to the local ONNX provider, not DeepSeek cloud", async () => {
     expect(secModelRecord("onnx:deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B").provider).toBe(
       "HF_TRANSFORMERS_ONNX"
     );
