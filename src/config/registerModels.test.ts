@@ -60,7 +60,7 @@ describe("registerSecModels", () => {
   });
 
   it("builds a routable HFT record", async () => {
-    const record = await hftModelRecord("onnx:onnx-community/Qwen2.5-0.5B-Instruct");
+    const record = hftModelRecord("onnx:onnx-community/Qwen2.5-0.5B-Instruct");
     expect(record.provider).toBe("HF_TRANSFORMERS_ONNX");
     expect(record.provider_config.model_path).toBe("onnx-community/Qwen2.5-0.5B-Instruct");
     expect(record.capabilities).toContain("json-mode");
@@ -92,25 +92,21 @@ describe("registerSecModels", () => {
   });
 
   it("dispatches secModelRecord by id shape across all providers", async () => {
-    expect((await secModelRecord("claude-opus-5")).provider).toBe("ANTHROPIC");
-    expect((await secModelRecord("gpt-5.5")).provider).toBe("OPENAI");
-    expect((await secModelRecord("gpt-5.4-mini")).provider).toBe("OPENAI");
-    expect((await secModelRecord("gemini-3.1-pro-preview")).provider).toBe("GOOGLE_GEMINI");
-    expect((await secModelRecord("grok-4.6")).provider).toBe("XAI");
-    expect((await secModelRecord("deepseek-v4-flash")).provider).toBe("DEEPSEEK");
-    expect((await secModelRecord("deepseek-v4-pro")).provider).toBe("DEEPSEEK");
-    expect((await secModelRecord("onnx:onnx-community/Qwen2.5-0.5B-Instruct")).provider).toBe(
+    expect(secModelRecord("claude-opus-5").provider).toBe("ANTHROPIC");
+    expect(secModelRecord("gpt-5.5").provider).toBe("OPENAI");
+    expect(secModelRecord("gpt-5.4-mini").provider).toBe("OPENAI");
+    expect(secModelRecord("gemini-3.1-pro-preview").provider).toBe("GOOGLE_GEMINI");
+    expect(secModelRecord("grok-4.6").provider).toBe("XAI");
+    expect(secModelRecord("deepseek-v4-flash").provider).toBe("DEEPSEEK");
+    expect(secModelRecord("deepseek-v4-pro").provider).toBe("DEEPSEEK");
+    expect(secModelRecord("onnx:onnx-community/Qwen2.5-0.5B-Instruct").provider).toBe(
       "HF_TRANSFORMERS_ONNX"
     );
-    expect((await secModelRecord("gguf:model.gguf")).provider).toBe("LOCAL_LLAMACPP");
-    expect((await secModelRecord("llama:model.gguf")).provider).toBe("LOCAL_LLAMACPP");
-    expect((await secModelRecord("node-llama:model.gguf")).provider).toBe("LOCAL_LLAMACPP");
-    expect((await secModelRecord("hfi:meta-llama/Llama-3.3-70B-Instruct")).provider).toBe(
-      "HF_INFERENCE"
-    );
-    expect((await secModelRecord("open-router:anthropic/claude-sonnet-4")).provider).toBe(
-      "OPENROUTER"
-    );
+    expect(secModelRecord("gguf:model.gguf").provider).toBe("LOCAL_LLAMACPP");
+    expect(secModelRecord("llama:model.gguf").provider).toBe("LOCAL_LLAMACPP");
+    expect(secModelRecord("node-llama:model.gguf").provider).toBe("LOCAL_LLAMACPP");
+    expect(secModelRecord("hfi:meta-llama/Llama-3.3-70B-Instruct").provider).toBe("HF_INFERENCE");
+    expect(secModelRecord("open-router:anthropic/claude-sonnet-4").provider).toBe("OPENROUTER");
   });
 
   it("pins an optional inference provider from hfi: / open-router: ids onto provider_config", () => {
@@ -170,7 +166,7 @@ describe("registerSecModels", () => {
     // SEC_HFT_MODEL / --models value stopped resolving.
     let message = "";
     try {
-      await secModelRecord("onnx-community/Qwen3-4B-Instruct-2507-ONNX");
+      secModelRecord("onnx-community/Qwen3-4B-Instruct-2507-ONNX");
     } catch (e) {
       message = e instanceof Error ? e.message : String(e);
     }
@@ -181,7 +177,7 @@ describe("registerSecModels", () => {
     // An id with no slash cannot be a repo id, so it gets no misleading hint.
     let plain = "";
     try {
-      await secModelRecord("sonnet-5");
+      secModelRecord("sonnet-5");
     } catch (e) {
       plain = e instanceof Error ? e.message : String(e);
     }
@@ -195,7 +191,7 @@ describe("registerSecModels", () => {
       "open-router:Fireworks:",
       "open-router::deepseek/deepseek-chat",
     ]) {
-      await expect(secModelRecord(id)).rejects.toBeInstanceOf(SecCliConfigurationError);
+      expect(() => secModelRecord(id)).toThrow(SecCliConfigurationError);
     }
   });
 
@@ -212,22 +208,22 @@ describe("registerSecModels", () => {
       "onnx-community/Qwen2.5-0.5B-Instruct",
       "",
     ]) {
-      await expect(secModelRecord(id)).rejects.toBeInstanceOf(SecCliConfigurationError);
+      expect(() => secModelRecord(id)).toThrow(SecCliConfigurationError);
     }
-    await expect(secModelRecord("claude--typo")).resolves.toBeDefined();
+    expect(() => secModelRecord("claude--typo")).not.toThrow();
   });
 
   it("names the offending id and the accepted shapes when it throws", async () => {
-    await expect(
-      secModelRecord("deepseek-v4-flash".replace("deepseek", "deapseek"))
-    ).rejects.toThrow(/deapseek-v4-flash.*deepseek-\*/s);
+    expect(() => secModelRecord("deepseek-v4-flash".replace("deepseek", "deapseek"))).toThrow(
+      /deapseek-v4-flash.*deepseek-\*/s
+    );
   });
 
   it("routes a deepseek-ai HuggingFace repo id via onnx: to the local ONNX provider, not DeepSeek cloud", async () => {
-    expect((await secModelRecord("onnx:deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B")).provider).toBe(
+    expect(secModelRecord("onnx:deepseek-ai/DeepSeek-R1-Distill-Qwen-1.5B").provider).toBe(
       "HF_TRANSFORMERS_ONNX"
     );
-    expect((await secModelRecord("deepseek-v4-flash")).provider).toBe("DEEPSEEK");
+    expect(secModelRecord("deepseek-v4-flash").provider).toBe("DEEPSEEK");
   });
 
   it("is idempotent — a second run does not duplicate or throw", async () => {

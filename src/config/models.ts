@@ -4,7 +4,6 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { resolveEmbeddingWidth } from "./embeddingWidth";
 import { SecCliConfigurationError } from "./EnvToDI";
 
 /**
@@ -25,60 +24,72 @@ import { SecCliConfigurationError } from "./EnvToDI";
  */
 const DEFAULT_EMBEDDING_MODEL = "onnx:Xenova/bge-base-en-v1.5:q8";
 
+/**
+ * The default model's output width, declared beside the model it belongs to.
+ *
+ * `bge-base-en-v1.5` is a BERT-base encoder with a hidden size of 768, and the
+ * record registers it with `pooling: "mean"` — so the vector handed back is the
+ * mean of the last hidden states and has exactly that many components. It is a
+ * property of the pinned model, not something to look up: the two move
+ * together, and a reader who changes one sees the other on the next line.
+ */
+const DEFAULT_EMBEDDING_DIMENSIONS = 768;
+
 /** The embedding model id, overridable with `SEC_EMBEDDING_MODEL`. */
 export function secEmbeddingModel(): string {
   return process.env.SEC_EMBEDDING_MODEL?.trim() || DEFAULT_EMBEDDING_MODEL;
 }
 
 /**
- * The configured embedding model's output width, asked of the model.
+ * The configured embedding model's output width.
  *
- * Resolved rather than assumed, and it refuses rather than guessing. The
- * alternative is what this replaced: the width was a literal `768` used both to
- * create the column and to check it, so `stored.dimensions === dimensions` was
- * `768 === 768` on every path, and a genuinely narrower model opened the
- * knowledge base without complaint and failed on the first chunk with a
- * `@workglow/knowledge-base` internal message naming neither the variable nor
- * the model — after the weights had been downloaded and the run had started.
+ * Declared rather than discovered. The alternative is what this replaced: the
+ * width was a literal `768` used both to create the vector column and to check
+ * it, so `stored.dimensions === dimensions` was `768 === 768` on every path,
+ * and a genuinely narrower model opened the knowledge base without complaint
+ * and failed on the first chunk with a `@workglow/knowledge-base` internal
+ * message naming neither the variable nor the model — after the weights had
+ * been downloaded and the run had started.
  *
- * The width comes from the model's own published config rather than from a
- * table kept here. A table is wrong in the direction that costs: a model it
- * does not carry is refused even though the model itself could always have
- * answered, and an entry that drifts is believed over the model.
+ * The fix is not to look the width up; it is to stop pretending a constant
+ * describes a model it was not written for. This CLI pins ONE embedding model
+ * and states its width beside it. Point `SEC_EMBEDDING_MODEL` at anything else
+ * and the width becomes yours to state too — `SEC_EMBEDDING_DIMENSIONS`, which
+ * is also what a cloud endpoint with no local weights needs.
  *
- * `SEC_EMBEDDING_DIMENSIONS` comes first, and is the way forward for a model
- * with no config to read — a cloud embedding endpoint, or an air-gapped run of
- * one that has never been used here. Stating it is also what makes the
- * stored-vs-configured comparison in `kb_index` mean something.
+ * Refusing at open is the whole point, and it is what survives from the
+ * literal: the vector column is created at whatever this returns, so a value
+ * that does not match the configured model builds a store the query cannot
+ * read, and a mismatch must not be discovered partway through a run.
  */
-export async function secEmbeddingDimensions(): Promise<number> {
+export function secEmbeddingDimensions(): number {
   const model = secEmbeddingModel();
   const override = process.env.SEC_EMBEDDING_DIMENSIONS?.trim();
 
   if (override !== undefined && override !== "") {
     const width = Number(override);
-    // A malformed override must not fall through to the derivation: creating
-    // the column at a width the model does not produce is the corruption the
-    // whole guard exists to avoid.
+    // A malformed override must not fall through to the default: creating the
+    // column at a width the model does not produce is the corruption the whole
+    // guard exists to avoid.
     if (!Number.isInteger(width) || width <= 0) {
       throw new SecCliConfigurationError(
         `SEC_EMBEDDING_DIMENSIONS is "${override}", which is not a positive whole number. ` +
           `It is the output width of SEC_EMBEDDING_MODEL ("${model}") in dimensions — ` +
-          `768 for the default model. Unset it to read the width off the model itself.`
+          `${DEFAULT_EMBEDDING_DIMENSIONS} for the default model.`
       );
     }
     return width;
   }
 
-  const derived = await resolveEmbeddingWidth(model);
-  if (derived !== undefined) return derived;
+  if (model === DEFAULT_EMBEDDING_MODEL) return DEFAULT_EMBEDDING_DIMENSIONS;
 
   throw new SecCliConfigurationError(
-    `SEC_EMBEDDING_MODEL is "${model}", and its output width could not be read from the ` +
-      `model — it publishes no config this can reach, or the config states no hidden size. ` +
-      `The width cannot be guessed: the vector column is created at it, so the wrong value ` +
-      `builds an index the query cannot read. Set SEC_EMBEDDING_DIMENSIONS to the model's ` +
-      `width, or use a HuggingFace model whose config states it.`
+    `SEC_EMBEDDING_MODEL is "${model}", which is not the model this CLI pins, so its output ` +
+      `width is not known here. The width cannot be guessed: the vector column is created at ` +
+      `it, so the wrong value builds an index the query cannot read. Set ` +
+      `SEC_EMBEDDING_DIMENSIONS to the model's width — 384 for all-MiniLM-L6-v2 and the other ` +
+      `small BERT encoders, 768 for the base ones, 1024 for the large — or unset ` +
+      `SEC_EMBEDDING_MODEL to use "${DEFAULT_EMBEDDING_MODEL}".`
   );
 }
 

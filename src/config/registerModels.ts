@@ -371,7 +371,7 @@ const HFT_CAPABILITIES: readonly string[] = [
  * into the worker; `pipeline: "text-generation"` selects the causal-LM pipeline
  * the structured-generation path drives.
  */
-export async function hftModelRecord(modelId: string): Promise<ModelRecord> {
+export function hftModelRecord(modelId: string): ModelRecord {
   const modelPath = modelId.startsWith(ONNX_ID_PREFIX)
     ? modelId.slice(ONNX_ID_PREFIX.length)
     : modelId;
@@ -403,7 +403,7 @@ export async function hftModelRecord(modelId: string): Promise<ModelRecord> {
       // embedding record without it fails AFTER running the model, with the
       // declared width reported as `undefined`.
       ...(embedding
-        ? { native_dimensions: await secEmbeddingDimensions(), pooling: "mean", normalize: true }
+        ? { native_dimensions: secEmbeddingDimensions(), pooling: "mean", normalize: true }
         : {}),
     },
     metadata: {},
@@ -589,9 +589,9 @@ export function openRouterModelRecord(modelId: string): ModelRecord {
  * model repository by an operator, a harness, or a test. Such an id is legal and
  * simply isn't ours to route, so those callers must not treat it as a failure.
  */
-export async function trySecModelRecord(modelId: string): Promise<ModelRecord | undefined> {
+export function trySecModelRecord(modelId: string): ModelRecord | undefined {
   if (isLlamaCppModelId(modelId)) return llamaCppModelRecord(modelId);
-  if (isHftModelId(modelId)) return await hftModelRecord(modelId);
+  if (isHftModelId(modelId)) return hftModelRecord(modelId);
   if (isHfInferenceModelId(modelId)) return hfInferenceModelRecord(modelId);
   if (isOpenRouterModelId(modelId)) return openRouterModelRecord(modelId);
   if (isAnthropicModelId(modelId)) return anthropicModelRecord(modelId);
@@ -656,8 +656,8 @@ export const KNOWN_MODEL_ID_SHAPES =
   "hfi:[provider:]org/name (HuggingFace Inference), " +
   "open-router:[provider:]vendor/model (OpenRouter)";
 
-export async function secModelRecord(modelId: string): Promise<ModelRecord> {
-  const record = await trySecModelRecord(modelId);
+export function secModelRecord(modelId: string): ModelRecord {
+  const record = trySecModelRecord(modelId);
   if (record) return record;
   // A bare `org/name` id needs an explicit provider prefix — without this hint
   // the message lists every legal shape and leaves the operator to notice that
@@ -685,7 +685,7 @@ export async function registerModelIds(
   const repo = getGlobalModelRepository(registry);
   for (const modelId of modelIds) {
     if (await repo.findByName(modelId)) continue;
-    await repo.addModel(await secModelRecord(modelId));
+    await repo.addModel(secModelRecord(modelId));
   }
 }
 

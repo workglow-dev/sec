@@ -47,11 +47,13 @@ describe("the SEC knowledge base's embedding-model record", () => {
   beforeEach(async () => {
     await resetSecKnowledgeBaseForTesting();
     delete process.env.SEC_EMBEDDING_MODEL;
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
   });
 
   afterEach(async () => {
     await resetSecKnowledgeBaseForTesting();
     delete process.env.SEC_EMBEDDING_MODEL;
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
   });
 
   it("reopens an index built by the same model", async () => {
@@ -68,12 +70,19 @@ describe("the SEC knowledge base's embedding-model record", () => {
     await resetSecKnowledgeBaseForTesting();
 
     // Same width, different space — the case a dimension check alone misses,
-    // and the one that answers questions instead of failing.
+    // and the one that answers questions instead of failing. The width is
+    // stated because it has to be for a model this CLI does not pin, and
+    // because 768 is what makes this the same-width case.
     process.env.SEC_EMBEDDING_MODEL = "onnx:Xenova/all-mpnet-base-v2:q8";
+    process.env.SEC_EMBEDDING_DIMENSIONS = "768";
     const failure = getSecKnowledgeBase();
     await expect(failure).rejects.toThrow(/bge-base-en-v1\.5/);
     await expect(failure).rejects.toThrow(/all-mpnet-base-v2/);
-    await expect(failure).rejects.toThrow(/SEC_EMBEDDING_MODEL/);
+    // Wording only this guard uses. The width refusal beside it names both
+    // models and the variable too, so the three above cannot tell them apart —
+    // and a test that cannot tell its own guard from its neighbour passes for
+    // the wrong reason.
+    await expect(failure).rejects.toThrow(/not comparable/);
   });
 
   it("adopts an index that predates the record rather than stranding it", async () => {
@@ -88,6 +97,7 @@ describe("the SEC knowledge base's embedding-model record", () => {
 
     await resetSecKnowledgeBaseForTesting();
     process.env.SEC_EMBEDDING_MODEL = "onnx:Xenova/all-mpnet-base-v2:q8";
+    process.env.SEC_EMBEDDING_DIMENSIONS = "768";
     await expect(getSecKnowledgeBase()).rejects.toThrow(/not comparable/);
   });
 });
@@ -158,8 +168,8 @@ describe("the SEC knowledge base's tables and `db reset`", () => {
 describe("the SEC knowledge base's chunk search", () => {
   withSqliteDb("kb_search", []);
 
-  const unit = async (index: number): Promise<Float32Array> => {
-    const vector = new Float32Array(await secEmbeddingDimensions());
+  const unit = (index: number): Float32Array => {
+    const vector = new Float32Array(secEmbeddingDimensions());
     vector[index] = 1;
     return vector;
   };
@@ -177,7 +187,7 @@ describe("the SEC knowledge base's chunk search", () => {
     await kb.upsertChunk({
       chunk_id: "north",
       doc_id: "doc-1",
-      vector: await unit(0),
+      vector: unit(0),
       metadata: {
         chunkId: "north",
         doc_id: "doc-1",
@@ -189,7 +199,7 @@ describe("the SEC knowledge base's chunk search", () => {
     await kb.upsertChunk({
       chunk_id: "east",
       doc_id: "doc-1",
-      vector: await unit(1),
+      vector: unit(1),
       metadata: {
         chunkId: "east",
         doc_id: "doc-1",
@@ -199,7 +209,7 @@ describe("the SEC knowledge base's chunk search", () => {
       },
     });
 
-    const hits = await kb.similaritySearch(await unit(1), { topK: 2 });
+    const hits = await kb.similaritySearch(unit(1), { topK: 2 });
     expect(hits.map((hit) => hit.chunk_id)).toEqual(["east", "north"]);
   });
 });
@@ -215,17 +225,12 @@ describe("an embedding model of unknown width", () => {
 
   beforeEach(async () => {
     await resetSecKnowledgeBaseForTesting();
-    // The width is read from the model's published config, so a model with no
-    // config to read is a Hub that cannot answer — stubbed rather than reached,
-    // since a test must not depend on the network to decide what it asserts.
-    vi.stubGlobal("fetch", () => Promise.reject(new Error("offline")));
     process.env.SEC_EMBEDDING_MODEL = "onnx:some-org/some-unlisted-model:q8";
     delete process.env.SEC_EMBEDDING_DIMENSIONS;
   });
 
   afterEach(async () => {
     await resetSecKnowledgeBaseForTesting();
-    vi.unstubAllGlobals();
     delete process.env.SEC_EMBEDDING_MODEL;
     delete process.env.SEC_EMBEDDING_DIMENSIONS;
   });
