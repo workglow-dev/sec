@@ -1,5 +1,65 @@
 # Changelog
 
+## 0.2.0
+
+### Features
+
+- implement ITabularStorage.join for @workglow 0.5.0 (#362)
+- implement CLI signal teardown and resource shutdown
+
+### Bug Fixes
+
+- declare the embedding width beside the model instead of assuming it (#359)
+
+#### release
+
+- declare the runtime floor, and derive the release bump (#357)
+
+#### kb
+
+- stop --dry-run creating the index tables, and report them in db stats
+- bound `ask`'s implicit index, pin the embedding model, and let `db reset` drop the index
+
+#### ask
+
+- refuse rather than answer from model memory when nothing is retrieved
+
+#### adv
+
+- scope each Form ADV archive to its own folder and make ingest idempotent
+
+### Performance
+
+#### status
+
+- read the newest ADV snapshot with one indexed row
+
+### Tests
+
+#### coverage
+
+- make the README witness check capable of failing (#360)
+
+### Chores
+
+- update deps
+- update dependencies to latest versions
+- migrate from Prettier to oxfmt for code formatting
+
+#### deps
+
+- upgrade Vitest to 5 (#342)
+
+### Updated Dependencies
+
+- `@workglow/cli`: 0.5.0
+- `typebox`: 1.3.29
+- `workglow`: 0.5.0
+- `@types/bun`: 1.4.2
+- `bunset`: 1.1.1
+- `oxlint`: ^1.82.0
+- `vitest`: ^5.0.0
+
 ## Unreleased — BREAKING: re-founded as the Workglow example project
 
 `@workglow/sec`'s source now lives in `embarc-data`, which no longer depends on
