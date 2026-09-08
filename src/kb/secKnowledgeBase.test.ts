@@ -1,0 +1,318 @@
+/**
+ * @license
+ * Copyright 2026 Steven Roussey <sroussey@gmail.com>
+ * SPDX-License-Identifier: Apache-2.0
+ */
+
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { globalServiceRegistry } from "workglow";
+import { resetAllDatabases } from "../config/resetAllDatabases";
+import { resetDependencyInjectionsForTesting } from "../config/TestingDI";
+import { withSqliteDb } from "../config/testing/withSqliteDb";
+import { secEmbeddingDimensions } from "../config/models";
+import { SEC_DB_TYPE, SEC_DRY_RUN } from "../config/tokens";
+import { getDb } from "../util/db";
+import { KB_INDEX_TABLE, SEC_KB_TABLE_NAMES } from "./secKbTables";
+import { getSecKnowledgeBase, resetSecKnowledgeBaseForTesting } from "./secKnowledgeBase";
+
+describe("getSecKnowledgeBase", () => {
+  beforeEach(async () => {
+    resetDependencyInjectionsForTesting();
+    await resetSecKnowledgeBaseForTesting();
+  });
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    resetDependencyInjectionsForTesting();
+  });
+
+  it("refuses a Postgres deployment by name, rather than opening a stray SQLite file", async () => {
+    // `getDb()` would throw its own error one frame deeper. Refusing here says
+    // which knob is wrong and what the two ways forward are.
+    globalServiceRegistry.registerInstance(SEC_DB_TYPE, "postgres");
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/SEC_DB_TYPE/);
+  });
+});
+
+/**
+ * Two embedding models put their vectors in unrelated spaces, so a query
+ * embedded by one and chunks embedded by another retrieve whatever happens to
+ * be nearest — and `ask` prints those hits as citations, with no sign that the
+ * index and the question disagree about what a vector means. Nothing recorded
+ * which model had built the index, so nothing could tell.
+ */
+describe("the SEC knowledge base's embedding-model record", () => {
+  withSqliteDb("kb_model", []);
+
+  beforeEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    delete process.env.SEC_EMBEDDING_MODEL;
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
+  });
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    delete process.env.SEC_EMBEDDING_MODEL;
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
+  });
+
+  it("reopens an index built by the same model", async () => {
+    process.env.SEC_EMBEDDING_MODEL = "onnx:Xenova/bge-base-en-v1.5:q8";
+    await getSecKnowledgeBase();
+    await resetSecKnowledgeBaseForTesting();
+
+    await expect(getSecKnowledgeBase()).resolves.toBeDefined();
+  });
+
+  it("refuses an index built by a different model, naming both and the way back", async () => {
+    process.env.SEC_EMBEDDING_MODEL = "onnx:Xenova/bge-base-en-v1.5:q8";
+    await getSecKnowledgeBase();
+    await resetSecKnowledgeBaseForTesting();
+
+    // Same width, different space — the case a dimension check alone misses,
+    // and the one that answers questions instead of failing. The width is
+    // stated because it has to be for a model this CLI does not pin, and
+    // because 768 is what makes this the same-width case.
+    process.env.SEC_EMBEDDING_MODEL = "onnx:Xenova/all-mpnet-base-v2:q8";
+    process.env.SEC_EMBEDDING_DIMENSIONS = "768";
+    const failure = getSecKnowledgeBase();
+    await expect(failure).rejects.toThrow(/bge-base-en-v1\.5/);
+    await expect(failure).rejects.toThrow(/all-mpnet-base-v2/);
+    // Wording only this guard uses. The width refusal beside it names both
+    // models and the variable too, so the three above cannot tell them apart —
+    // and a test that cannot tell its own guard from its neighbour passes for
+    // the wrong reason.
+    await expect(failure).rejects.toThrow(/not comparable/);
+  });
+
+  it("adopts an index that predates the record rather than stranding it", async () => {
+    // Nothing on disk says what built such an index, so there is no mismatch to
+    // report — but the model is recorded on the way through, and the run after
+    // it is checked.
+    const db = getDb();
+    db.exec(`DROP TABLE IF EXISTS "${KB_INDEX_TABLE}"`);
+    process.env.SEC_EMBEDDING_MODEL = "onnx:Xenova/bge-base-en-v1.5:q8";
+
+    await expect(getSecKnowledgeBase()).resolves.toBeDefined();
+
+    await resetSecKnowledgeBaseForTesting();
+    process.env.SEC_EMBEDDING_MODEL = "onnx:Xenova/all-mpnet-base-v2:q8";
+    process.env.SEC_EMBEDDING_DIMENSIONS = "768";
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/not comparable/);
+  });
+});
+
+/**
+ * The knowledge base's tables are built lazily and directly against `getDb()`,
+ * so `createStorage`'s ownership registry never sees them.
+ *
+ * A reset that leaves `kb_document` standing is worse than one that leaves
+ * nothing: every filing then anti-joins as "already indexed", so a re-load
+ * followed by `sec index` reports success having embedded nothing, and `ask`
+ * answers from vectors of documents the database no longer holds.
+ */
+describe("the SEC knowledge base's tables and `db reset`", () => {
+  withSqliteDb("kb_reset", []);
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+  });
+
+  const tableNames = (): string[] =>
+    (
+      getDb().prepare("SELECT name FROM sqlite_master WHERE type='table'").all() as {
+        name: string;
+      }[]
+    ).map((row) => row.name);
+
+  it("drops the index along with the rest of sec's tables", async () => {
+    await getSecKnowledgeBase();
+    expect(tableNames()).toEqual(expect.arrayContaining([...SEC_KB_TABLE_NAMES]));
+
+    await resetAllDatabases();
+
+    const remaining = tableNames();
+    for (const table of SEC_KB_TABLE_NAMES) {
+      expect(remaining, table).not.toContain(table);
+    }
+  });
+
+  it("counts them as sec's own, so a reset does not report them as orphans", async () => {
+    await getSecKnowledgeBase();
+    const warn = vi.spyOn(console, "warn").mockImplementation(() => {});
+    try {
+      await resetAllDatabases();
+      const warnings = warn.mock.calls
+        .map((args: readonly unknown[]) => String(args[0]))
+        .join("\n");
+      for (const table of SEC_KB_TABLE_NAMES) {
+        expect(warnings, table).not.toContain(table);
+      }
+    } finally {
+      warn.mockRestore();
+    }
+  });
+});
+
+/**
+ * Search over a real SQLite chunk store, which is the only thing that
+ * exercises the vector column's decode. `getSecKnowledgeBase` is the seam that
+ * chooses the storage class, so the assertion is deliberately end-to-end from
+ * there rather than against a store the test constructs itself.
+ *
+ * This is the shape that broke: `@workglow/sqlite` <= 0.4.7 JSON-parsed a
+ * column `getAll()` had already decoded to a `Float32Array`, so every search
+ * threw "Unable to parse JSON string" and nothing in this repo noticed,
+ * because nothing here searched.
+ */
+describe("the SEC knowledge base's chunk search", () => {
+  withSqliteDb("kb_search", []);
+
+  const unit = (index: number): Float32Array => {
+    const vector = new Float32Array(secEmbeddingDimensions());
+    vector[index] = 1;
+    return vector;
+  };
+
+  beforeEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+  });
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+  });
+
+  it("ranks stored chunks by cosine distance from the query", async () => {
+    const kb = await getSecKnowledgeBase();
+    await kb.upsertChunk({
+      chunk_id: "north",
+      doc_id: "doc-1",
+      vector: unit(0),
+      metadata: {
+        chunkId: "north",
+        doc_id: "doc-1",
+        depth: 0,
+        nodePath: ["north"],
+        text: "the north section",
+      },
+    });
+    await kb.upsertChunk({
+      chunk_id: "east",
+      doc_id: "doc-1",
+      vector: unit(1),
+      metadata: {
+        chunkId: "east",
+        doc_id: "doc-1",
+        depth: 0,
+        nodePath: ["east"],
+        text: "the east section",
+      },
+    });
+
+    const hits = await kb.similaritySearch(unit(1), { topK: 2 });
+    expect(hits.map((hit) => hit.chunk_id)).toEqual(["east", "north"]);
+  });
+});
+
+/**
+ * The width refusal has to land before any DDL. Discovering it afterwards is
+ * the failure this replaced — the column already exists at a width the model's
+ * vectors will not have, and the error arrives from inside the library on the
+ * first chunk.
+ */
+describe("an embedding model of unknown width", () => {
+  withSqliteDb("kb_width", []);
+
+  beforeEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    process.env.SEC_EMBEDDING_MODEL = "onnx:some-org/some-unlisted-model:q8";
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
+  });
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    delete process.env.SEC_EMBEDDING_MODEL;
+    delete process.env.SEC_EMBEDDING_DIMENSIONS;
+  });
+
+  it("refuses before creating a single table", async () => {
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/SEC_EMBEDDING_MODEL/);
+
+    const rows = getDb()
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'kb_%'")
+      .all() as { name: string }[];
+    expect(rows).toEqual([]);
+  });
+
+  it("opens once the width is stated", async () => {
+    process.env.SEC_EMBEDDING_DIMENSIONS = "384";
+    await expect(getSecKnowledgeBase()).resolves.toBeDefined();
+  });
+});
+
+/**
+ * `--dry-run` promises to show what would happen without changing anything.
+ * These three tables are built lazily against the `getDb()` connection rather
+ * than through `createStorage`, so neither guard that protects every other
+ * table reaches them: no `ReadOnlyTabularStorage` wrapper, and the `isDryRun()`
+ * in this module guarded only the `kb_index` row write, several lines below the
+ * three `CREATE TABLE`s.
+ */
+describe("the knowledge base under --dry-run", () => {
+  withSqliteDb("kb_dry", []);
+
+  function kbTablesOnDisk(): string[] {
+    const rows = getDb()
+      .prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name LIKE 'kb_%'")
+      .all() as { name: string }[];
+    return rows.map((row) => row.name).sort();
+  }
+
+  beforeEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    delete process.env.SEC_EMBEDDING_MODEL;
+  });
+
+  afterEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    delete process.env.SEC_EMBEDDING_MODEL;
+  });
+
+  it("creates no table when the index does not exist yet", async () => {
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/dry run/i);
+
+    expect(kbTablesOnDisk()).toEqual([]);
+  });
+
+  it("names the command that would build the index", async () => {
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+    await expect(getSecKnowledgeBase()).rejects.toThrow(/sec index/);
+  });
+
+  it("opens an index that already exists, and still writes nothing", async () => {
+    // A dry run against a real database is the normal case: the tables are
+    // there, and the run must be allowed to read them.
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    await getSecKnowledgeBase();
+    await resetSecKnowledgeBaseForTesting();
+    expect(kbTablesOnDisk()).toEqual(SEC_KB_TABLE_NAMES.toSorted());
+
+    getDb().exec(`DELETE FROM ${KB_INDEX_TABLE}`);
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+
+    await expect(getSecKnowledgeBase()).resolves.toBeDefined();
+    const rows = getDb().prepare(`SELECT COUNT(*) AS n FROM ${KB_INDEX_TABLE}`).all() as {
+      n: number;
+    }[];
+    expect(rows[0]?.n).toBe(0);
+  });
+
+  it("still creates the tables when this is not a dry run", async () => {
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    await getSecKnowledgeBase();
+    expect(kbTablesOnDisk()).toEqual(SEC_KB_TABLE_NAMES.toSorted());
+  });
+});
