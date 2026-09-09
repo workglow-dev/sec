@@ -6,7 +6,7 @@
 
 import { mkdirSync, mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { join, relative } from "node:path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import { globalServiceRegistry } from "workglow";
 import { SEC_RAW_DATA_FOLDER } from "../../config/tokens";
@@ -141,6 +141,94 @@ describe("IngestAdvSnapshotTask", () => {
 
     const rows = globalServiceRegistry.get(ADV_ROW_REPOSITORY_TOKEN);
     expect((await rows.query({ snapshot: "2011-2024" })) ?? []).toHaveLength(2);
+    expect((await rows.query({ snapshot: "2026-06" })) ?? []).toHaveLength(3);
+  });
+
+  it("keeps the newest base filing per CRD, not whichever the file listed last", async () => {
+    // One adviser, two of its annual amendments, newest FIRST — so a pass that
+    // takes the last row it sees keeps the 2013 description of a firm that has
+    // filed every year since. The cumulative archive stamps thirteen years of
+    // filings with one snapshot label, so every one of them collides here.
+    extract("2011-2024", {
+      "IA_ADV_Base_A.csv": [
+        "FilingID,DateSubmitted,1A,1B1,1D,1E1,1F1-City,1F1-State,1F1-Country,5F2c",
+        '900002,6/30/2024,"Acme Capital Management, LP",Acme Capital,801-12345,110001,Boston,MA,United States,"3,000,000,000"',
+        '900001,4/1/2013,Acme Capital LLC,Acme,801-12345,110001,Providence,RI,United States,"90,000,000"',
+      ].join("\n"),
+    });
+
+    const out = await new IngestAdvSnapshotTask().run({ snapshot: "2011-2024" });
+
+    const advisers = globalServiceRegistry.get(ADV_ADVISER_REPOSITORY_TOKEN);
+    const landed = (await advisers.query({ snapshot: "2011-2024" })) ?? [];
+    expect(landed).toHaveLength(1);
+    // The reported count is rows that landed, not rows pushed at the key.
+    expect(out.advisers).toBe(1);
+
+    const acme = landed[0]!;
+    expect(acme.date_submitted).toBe("2024-06-30");
+    expect(acme.filing_id).toBe("900002");
+    expect(acme.regulatory_aum).toBe(3_000_000_000);
+    expect(acme.main_office_state).toBe("MA");
+  });
+
+  it("orders undated filings behind dated ones rather than by position", async () => {
+    extract("2011-2024", {
+      "IA_ADV_Base_A.csv": [
+        "FilingID,DateSubmitted,1A,1B1,1D,1E1,1F1-City,1F1-State,1F1-Country,5F2c",
+        '900010,5/1/2020,Gamma Advisers LLC,Gamma,801-22222,110003,Denver,CO,United States,"5,000,000"',
+        "900011,,Gamma Advisers LLC,Gamma,801-22222,110003,Nowhere,ZZ,United States,",
+      ].join("\n"),
+    });
+
+    await new IngestAdvSnapshotTask().run({ snapshot: "2011-2024" });
+
+    const advisers = globalServiceRegistry.get(ADV_ADVISER_REPOSITORY_TOKEN);
+    const gamma = await advisers.get({ snapshot: "2011-2024", crd_number: "110003" });
+    expect(gamma?.date_submitted).toBe("2020-05-01");
+    expect(gamma?.main_office_state).toBe("CO");
+  });
+
+  it("refuses a folder that resolves outside SEC_RAW_DATA_FOLDER", async () => {
+    const outside = mkdtempSync(join(tmpdir(), "sec-adv-outside-"));
+    writeFileSync(join(outside, "Private.csv"), "secret\nvalue\n");
+    try {
+      // The same shape `BootstrapDownloadTask` guards: the task is registered,
+      // so this input arrives from `sec-base task run`, the console form and
+      // the MCP tool surface, not only from the sync leaf.
+      await expect(
+        new IngestAdvSnapshotTask().run({
+          snapshot: "2026-06",
+          folder: relative(dir, outside),
+        })
+      ).rejects.toThrow(/SEC_RAW_DATA_FOLDER/);
+
+      const rows = globalServiceRegistry.get(ADV_ROW_REPOSITORY_TOKEN);
+      expect((await rows.getAll()) ?? []).toHaveLength(0);
+    } finally {
+      rmSync(outside, { recursive: true, force: true });
+    }
+  });
+
+  it("still validates the snapshot label when folder is given", async () => {
+    // `snapshot` is stamped on every row AND names the rows dropped before the
+    // read, so a label that never passed `advArchiveFolder` can wipe a real one.
+    await expect(
+      new IngestAdvSnapshotTask().run({
+        snapshot: "not-a-period",
+        folder: advArchiveFolder("2026-06"),
+      })
+    ).rejects.toThrow(/YYYY-MM/);
+  });
+
+  it("does not drop another snapshot's rows when the read is refused", async () => {
+    await new IngestAdvSnapshotTask().run({ snapshot: "2026-06" });
+
+    await expect(
+      new IngestAdvSnapshotTask().run({ snapshot: "2026-06", folder: "../.." })
+    ).rejects.toThrow(/SEC_RAW_DATA_FOLDER/);
+
+    const rows = globalServiceRegistry.get(ADV_ROW_REPOSITORY_TOKEN);
     expect((await rows.query({ snapshot: "2026-06" })) ?? []).toHaveLength(3);
   });
 

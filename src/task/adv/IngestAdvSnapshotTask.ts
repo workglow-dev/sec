@@ -5,7 +5,7 @@
  */
 
 import { readdir, readFile } from "node:fs/promises";
-import { extname, join } from "node:path";
+import { extname, join, resolve, sep } from "node:path";
 import { Type } from "typebox";
 import type { IExecuteContext } from "workglow";
 import { globalServiceRegistry, Task, TaskAbortedError } from "workglow";
@@ -89,6 +89,40 @@ function toNumber(value: string | undefined): number | null {
   return Number.isFinite(parsed) ? parsed : null;
 }
 
+/**
+ * Orders two `filing_id`s, ascending, with a missing one lowest.
+ *
+ * Numerically where both parse, because ADV writes the id unpadded and a
+ * lexical comparison puts `900010` below `900002`.
+ */
+function compareFilingId(a: string | null, b: string | null): number {
+  if (a === b) return 0;
+  if (a === null) return -1;
+  if (b === null) return 1;
+  const na = Number(a);
+  const nb = Number(b);
+  if (Number.isFinite(na) && Number.isFinite(nb) && na !== nb) return na < nb ? -1 : 1;
+  return a < b ? -1 : 1;
+}
+
+/**
+ * Whether `candidate` is the later of two base filings for one CRD.
+ *
+ * `date_submitted` decides, and `filing_id` breaks a tie. An undated filing
+ * loses to a dated one: it cannot be ordered against it, and a header the
+ * archive left undated must not displace one that says when it was filed.
+ */
+function isLaterFiling(candidate: AdvAdviser, current: AdvAdviser): boolean {
+  const a = candidate.date_submitted;
+  const b = current.date_submitted;
+  if (a !== b) {
+    if (a === null) return false;
+    if (b === null) return true;
+    return a > b;
+  }
+  return compareFilingId(candidate.filing_id, current.filing_id) > 0;
+}
+
 /** ISO date, or null — ADV dates arrive in several spellings across archives. */
 function toIsoDate(value: string | undefined): string | null {
   if (value === undefined) return null;
@@ -102,7 +136,9 @@ function toIsoDate(value: string | undefined): string | null {
 
 /**
  * Lands one extracted Form ADV archive: every member as `adv_row`, and the
- * base-filing member additionally as typed `adv_adviser` rows.
+ * base-filing member additionally as typed `adv_adviser` rows — one per CRD,
+ * carrying that adviser's latest filing in the snapshot. Per-filing history
+ * stays in `adv_row`, which keeps every base row verbatim.
  *
  * Nothing here knows the SEC's column set. The two headline tables people
  * filter on get columns; everything else stays queryable as JSON. A member the
@@ -145,8 +181,17 @@ export class IngestAdvSnapshotTask extends Task<
     context: IExecuteContext
   ): Promise<TaskPorts<IngestAdvSnapshotTaskOutput>> {
     const root = globalServiceRegistry.get(SEC_RAW_DATA_FOLDER);
-    const folder = input.folder ?? advArchiveFolder(input.snapshot);
-    const dir = join(root, folder);
+    // Unconditionally, so `folder` cannot smuggle past it: `snapshot` is
+    // stamped on every row and names the rows dropped before the read.
+    const snapshotFolder = advArchiveFolder(input.snapshot);
+    const folder = input.folder ?? snapshotFolder;
+    const dir = resolve(root, folder);
+    const safeBase = resolve(root) + sep;
+    if (!dir.startsWith(safeBase)) {
+      throw new Error(
+        `Invalid folder "${folder}": must resolve to a subdirectory of SEC_RAW_DATA_FOLDER`
+      );
+    }
     const members = (await readMembers(dir)).sort();
 
     if (members.length === 0) {
@@ -168,7 +213,11 @@ export class IngestAdvSnapshotTask extends Task<
     }
 
     let rowTotal = 0;
-    let adviserTotal = 0;
+    // Keyed by CRD because `adv_adviser` is, and the base member is one row per
+    // FILING: the cumulative archive carries every amendment an adviser filed
+    // between 2011 and 2024 under one snapshot label. Resolved here rather than
+    // left to the write, whose last-write-wins is CSV position.
+    const advisers = new Map<string, AdvAdviser>();
 
     for (const [position, member] of members.entries()) {
       if (context.signal?.aborted) throw new TaskAbortedError();
@@ -197,11 +246,10 @@ export class IngestAdvSnapshotTask extends Task<
 
       if (!isBaseFilingMember(table)) continue;
       const era = isEraMember(table);
-      const advisers: AdvAdviser[] = [];
       for (const row of rows) {
         const crd = advField(row, "1E1", "CRD Number", "crd_number");
         if (crd === undefined) continue;
-        advisers.push({
+        const adviser: AdvAdviser = {
           snapshot: input.snapshot,
           crd_number: crd,
           sec_file_number: advField(row, "1D", "SEC File Number") ?? null,
@@ -214,16 +262,26 @@ export class IngestAdvSnapshotTask extends Task<
           regulatory_aum: toNumber(advField(row, "5F2c", "5F(2)(c)")),
           filing_id: advField(row, "FilingID") ?? null,
           date_submitted: toIsoDate(advField(row, "DateSubmitted", "Date Submitted")),
-        });
+        };
+        const held = advisers.get(crd);
+        if (held === undefined || isLaterFiling(adviser, held)) advisers.set(crd, adviser);
       }
-      if (!dryRun) {
-        for (let i = 0; i < advisers.length; i += WRITE_BATCH) {
-          await adviserRepo.putBulk(advisers.slice(i, i + WRITE_BATCH));
-        }
-      }
-      adviserTotal += advisers.length;
     }
 
-    return { success: true, tables: members.length, rows: rowTotal, advisers: adviserTotal };
+    // After every member, because the IA and ERA base members are one adviser
+    // set split in two and either can hold the later filing for a CRD.
+    const landedAdvisers = [...advisers.values()];
+    if (!dryRun) {
+      for (let i = 0; i < landedAdvisers.length; i += WRITE_BATCH) {
+        await adviserRepo.putBulk(landedAdvisers.slice(i, i + WRITE_BATCH));
+      }
+    }
+
+    return {
+      success: true,
+      tables: members.length,
+      rows: rowTotal,
+      advisers: landedAdvisers.length,
+    };
   }
 }
