@@ -14,6 +14,7 @@ import {
   Task,
   TaskAbortedError,
 } from "workglow";
+import { isDryRun } from "../../cli/isDryRun";
 import { getSecKnowledgeBase } from "../../kb/secKnowledgeBase";
 import type { FilingDocument } from "../../storage/document/FilingDocumentSchema";
 import {
@@ -176,6 +177,15 @@ export class IndexFilingSectionsTask extends Task<
     const work = truncated ? candidates.slice(0, limit) : candidates;
     const skipped = input.force === true ? 0 : await countAlreadyIndexed(scope);
     const denominator = Math.max(1, work.length);
+
+    // The knowledge base's storages are built against `getDb()` rather than
+    // through `createStorage`, so no `ReadOnlyTabularStorage` wrapper stands
+    // between an upsert here and a committed row. The selection above is a
+    // read, so it still reports what the run would do.
+    if (isDryRun()) {
+      console.log(`Would index ${work.length} filing(s) into the knowledge base.`);
+      return { success: true, indexed: 0, sections: 0, skipped, truncated };
+    }
 
     let indexed = 0;
     let sectionTotal = 0;

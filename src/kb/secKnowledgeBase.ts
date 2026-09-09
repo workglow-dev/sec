@@ -16,7 +16,6 @@ import {
   KnowledgeBase,
   registerKnowledgeBase,
   SqliteTabularStorage,
-  SqliteVectorStorage,
   unregisterKnowledgeBase,
 } from "workglow";
 import { isDryRun } from "../cli/isDryRun";
@@ -24,6 +23,7 @@ import { SecCliConfigurationError } from "../config/EnvToDI";
 import { secEmbeddingDimensions, secEmbeddingModel } from "../config/models";
 import { SEC_DB_TYPE } from "../config/tokens";
 import { getDb } from "../util/db";
+import { PagedChunkVectorStorage } from "./PagedChunkVectorStorage";
 import {
   KB_CHUNK_TABLE,
   KB_DOCUMENT_TABLE,
@@ -163,7 +163,9 @@ export async function getSecKnowledgeBase(): Promise<KnowledgeBase> {
     DocumentStorageSchema,
     DocumentStorageKey
   );
-  const chunks = new SqliteVectorStorage(
+  // Paged rather than the base class, whose search reads the whole table to
+  // score one query — see {@link PagedChunkVectorStorage}.
+  const chunks = new PagedChunkVectorStorage(
     db,
     KB_CHUNK_TABLE,
     ChunkVectorStorageSchema,
