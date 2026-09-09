@@ -128,7 +128,9 @@ export function addAskCommands(program: Command): void {
                   "warn",
                   `stopped at ${limit} filing(s); this answer sees only what is indexed. ` +
                     "Run `sec index` for the full build (`--limit` bounds one run), raise " +
-                    "`--index-limit`, or pass `--no-index` to answer from the index as it stands."
+                    "`--index-limit`, or pass `--no-index` to answer from the index as it stands. " +
+                    "Retrieval scores every chunk in the index, so a larger index is a slower " +
+                    "question — scope the build with `--company` or `--form` if you can."
                 )
               );
             }

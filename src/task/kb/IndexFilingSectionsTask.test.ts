@@ -4,10 +4,11 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DocumentNode } from "workglow";
 import { Document, globalServiceRegistry, NodeKind } from "workglow";
 import { withSqliteDb } from "../../config/testing/withSqliteDb";
+import { SEC_DRY_RUN } from "../../config/tokens";
 import { getSecKnowledgeBase, resetSecKnowledgeBaseForTesting } from "../../kb/secKnowledgeBase";
 import {
   FILING_DOCUMENT_REPOSITORY_TOKEN,
@@ -122,5 +123,69 @@ describe("IndexFilingSectionsTask selection", () => {
     const out = await new IndexFilingSectionsTask().run({ limit: 0 });
 
     expect(out).toMatchObject({ indexed: 0, sections: 0, skipped: 0, truncated: false });
+  });
+});
+
+/**
+ * `--dry-run` promises to change nothing, and `runCommand` prints that promise
+ * before the task runs. The knowledge base's three storages are built directly
+ * against `getDb()` rather than through `createStorage`, so no
+ * `ReadOnlyTabularStorage` wrapper stands between this task and a real write —
+ * and the guard that recognised that covered only the DDL and the `kb_index`
+ * row, not the documents and chunk vectors the ingest lands.
+ */
+describe("IndexFilingSectionsTask under --dry-run", () => {
+  withSqliteDb("kb_index_dry", [FILING_DOCUMENT_REPOSITORY_TOKEN, FILING_SECTION_REPOSITORY_TOKEN]);
+
+  beforeEach(async () => {
+    await resetSecKnowledgeBaseForTesting();
+    const documents = globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN);
+    await documents.put(header(0, "2026-01-02"));
+    const sections = globalServiceRegistry.get(FILING_SECTION_REPOSITORY_TOKEN);
+    await sections.put({
+      cik: 320193,
+      accession_number: "0000320193-26-000000",
+      doc_file: "primary.htm",
+      ordinal: 0,
+      slug: "risk-factors",
+      title: "Risk Factors",
+      depth: 1,
+      char_count: 24,
+      markdown: "# Risk Factors\n\nProse.",
+    });
+  });
+
+  afterEach(async () => {
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    await resetSecKnowledgeBaseForTesting();
+  });
+
+  it("embeds and persists nothing", async () => {
+    // Opened first, so the tables exist: `getSecKnowledgeBase`'s own dry-run
+    // refusal covers the index that does not exist yet, and an already-indexed
+    // database is the case it lets through.
+    const kb = await getSecKnowledgeBase();
+    const upsert = vi
+      .spyOn(kb, "upsert")
+      .mockResolvedValue({ doc_id: "0000320193-26-000000:primary.htm" } as never);
+
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+    const out = await new IndexFilingSectionsTask().run({});
+
+    expect(upsert).not.toHaveBeenCalled();
+    expect(out).toMatchObject({ success: true, indexed: 0, sections: 0 });
+  });
+
+  it("still indexes when this is not a dry run", async () => {
+    const kb = await getSecKnowledgeBase();
+    const upsert = vi
+      .spyOn(kb, "upsert")
+      .mockResolvedValue({ doc_id: "0000320193-26-000000:primary.htm" } as never);
+
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    const out = await new IndexFilingSectionsTask().run({});
+
+    expect(upsert).toHaveBeenCalledTimes(1);
+    expect(out).toMatchObject({ success: true, indexed: 1, sections: 1 });
   });
 });
