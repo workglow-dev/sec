@@ -4,7 +4,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DocumentNode } from "workglow";
 import { Document, globalServiceRegistry, NodeKind } from "workglow";
 import { withSqliteDb } from "../../config/testing/withSqliteDb";
@@ -13,6 +13,7 @@ import {
   FILING_DOCUMENT_REPOSITORY_TOKEN,
   type FilingDocument,
 } from "../../storage/document/FilingDocumentSchema";
+import { getDb } from "../../util/db";
 import { countAlreadyIndexed, kbDocIdFor, selectDocumentsToIndex } from "./selectDocumentsToIndex";
 
 const doc = (index: number, over: Partial<FilingDocument> = {}): FilingDocument => ({
@@ -147,5 +148,52 @@ describe("selectDocumentsToIndex (sqlite)", () => {
   it("returns nothing for a non-positive limit rather than everything", async () => {
     await seed(2);
     expect(await selectDocumentsToIndex({ limit: 0 })).toEqual([]);
+  });
+
+  /**
+   * The selection reads `filing_document` newest first and takes a page of it.
+   * Without an index in that order SQLite reads every row of the largest table
+   * in the database and sorts the lot into a temp B-tree to hand back the first
+   * few — on every `sec ask`, which pre-indexes before it answers.
+   *
+   * Asserted through the plan of the statement the selection actually prepares,
+   * rather than by looking the index up in `sqlite_master`: an index whose
+   * column order does not match the `ORDER BY` exists and removes nothing.
+   */
+  it("reads the newest filings from an index rather than sorting the table", async () => {
+    await seed(3);
+    // The knowledge-base tables exist here, so the plan is the one with the
+    // anti-join — the shape `sec index` and `sec ask` both run.
+    await markIndexed(1);
+
+    const db = getDb();
+    const prepared: { sql: string; params: unknown[] }[] = [];
+    const realPrepare = db.prepare.bind(db);
+    vi.spyOn(db, "prepare").mockImplementation(((sql: string) => {
+      const statement = realPrepare(sql);
+      if (!/FROM `filing_document`/.test(sql)) return statement;
+      const realAll = statement.all.bind(statement);
+      return new Proxy(statement, {
+        get(target, property, receiver) {
+          if (property !== "all") return Reflect.get(target, property, receiver);
+          return (...params: unknown[]) => {
+            prepared.push({ sql, params });
+            return realAll(...(params as never[]));
+          };
+        },
+      });
+    }) as never);
+
+    await selectDocumentsToIndex({ limit: 10 });
+
+    expect(prepared).toHaveLength(1);
+    const plan = (
+      db
+        .prepare(`EXPLAIN QUERY PLAN ${prepared[0]!.sql}`)
+        .all(...(prepared[0]!.params as never[])) as { detail: string }[]
+    ).map((row) => row.detail);
+
+    expect(plan.join("\n")).toContain("filing_document_filing_date_accession_number");
+    expect(plan.some((step) => /TEMP B-TREE FOR ORDER BY/.test(step))).toBe(false);
   });
 });

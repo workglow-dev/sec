@@ -288,6 +288,16 @@ so (`Rows (est.)`, a per-row `(est.)` marker, a footer pointing at `--exact`, an
   `db status` printed `Entities: 0 / Filings: 0` under a column labelled "Rows". Zero now
   means "no statistics yet"; a genuinely empty table pays one cheap `COUNT(*)`.
 
+### A newly declared index needs one `db setup`, and nothing else
+
+`setupDatabase()` emits every index a registry entry declares as
+`CREATE INDEX IF NOT EXISTS`, on every run and not only on a fresh database — so an index
+added to `indexes` in `storageRegistry.ts` appears on an existing deployment the next time
+`sec db setup` (or `sec setup`) runs, and no rows move. That is the opposite of a new
+*column*, which `CREATE TABLE IF NOT EXISTS` cannot add and which needs the catch-up pass
+below. On a large table the `CREATE INDEX` itself is the cost: it reads the table once and
+holds a write lock while it builds.
+
 ### Three schema catch-up passes
 
 `db setup` finishes with these, in order, all after the extension loop.

@@ -236,7 +236,17 @@ export const SEC_STORAGE_REGISTRY: readonly StorageDefinition[] = [
     // at the current converter version" — the primary is written last, so its
     // presence is what means the whole submission landed. `converted_at` serves
     // the recency listing.
-    indexes: [["form", "converter_version", "is_primary"], ["converted_at"]],
+    //
+    // `(filing_date, accession_number)` is the order the index selection reads
+    // this table in — newest filing first, ties broken by accession — and the
+    // column order matches that ORDER BY exactly, so SQLite walks the index
+    // backwards instead of sorting the whole table into a temp B-tree to take
+    // the first page of it.
+    indexes: [
+      ["form", "converter_version", "is_primary"],
+      ["converted_at"],
+      ["filing_date", "accession_number"],
+    ],
   }),
   defineStorage({
     token: FILING_SECTION_REPOSITORY_TOKEN,

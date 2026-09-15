@@ -38,6 +38,15 @@ export interface IndexFilingSectionsTaskInput {
   readonly limit?: number | undefined;
   /** Re-index filings already in the knowledge base. */
   readonly force?: boolean | undefined;
+  /**
+   * Count the filings already in the index, for the `skipped` output.
+   *
+   * Its own COUNT over `filing_document` joined to the knowledge base, so a
+   * caller that does not show the number pays for a join it never reads —
+   * `sec ask` pre-indexes on every question and reports only what it indexed.
+   * Defaults to counting, so a caller has to have decided not to.
+   */
+  readonly countSkipped?: boolean | undefined;
 }
 
 export interface IndexFilingSectionsTaskOutput {
@@ -46,8 +55,12 @@ export interface IndexFilingSectionsTaskOutput {
   readonly indexed: number;
   /** Sections embedded across them. */
   readonly sections: number;
-  /** Filings already in the index, skipped. */
-  readonly skipped: number;
+  /**
+   * Filings already in the index, skipped — `undefined` when this run did not
+   * count them. Absent rather than zero, because zero is an answer: it says the
+   * index holds nothing in scope, which is not what "nobody asked" means.
+   */
+  readonly skipped: number | undefined;
   /** True when the run hit its limit with filings still unexamined. */
   readonly truncated: boolean;
 }
@@ -138,6 +151,7 @@ export class IndexFilingSectionsTask extends Task<
       accession: Type.Optional(Type.String()),
       limit: Type.Optional(Type.Number()),
       force: Type.Optional(Type.Boolean()),
+      countSkipped: Type.Optional(Type.Boolean()),
     });
   }
 
@@ -146,7 +160,7 @@ export class IndexFilingSectionsTask extends Task<
       success: Type.Boolean(),
       indexed: Type.Integer(),
       sections: Type.Integer(),
-      skipped: Type.Integer(),
+      skipped: Type.Optional(Type.Integer()),
       truncated: Type.Boolean(),
     });
   }
@@ -175,7 +189,13 @@ export class IndexFilingSectionsTask extends Task<
     });
     const truncated = limit !== undefined && candidates.length > limit;
     const work = truncated ? candidates.slice(0, limit) : candidates;
-    const skipped = input.force === true ? 0 : await countAlreadyIndexed(scope);
+    // Left unset for a caller that will not render it: the count is a join over
+    // every converted filing, which is the slowest read this task takes. Under
+    // `--force` nothing is skipped, so the answer is zero without asking.
+    let skipped: number | undefined;
+    if (input.countSkipped !== false) {
+      skipped = input.force === true ? 0 : await countAlreadyIndexed(scope);
+    }
     const denominator = Math.max(1, work.length);
 
     // The knowledge base's storages are built against `getDb()` rather than

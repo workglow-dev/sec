@@ -66,12 +66,13 @@ export function addAskCommands(program: Command): void {
             defaults: { ...scope, limit: options.limit, force: options.force === true },
           }),
         ]);
+        const skipped = out.skipped ?? 0;
         console.log(
           `indexed ${out.indexed} filing(s) · ${out.sections} sections` +
-            (out.skipped > 0 ? ` · ${out.skipped} already indexed` : "") +
+            (skipped > 0 ? ` · ${skipped} already indexed` : "") +
             (out.truncated ? " · stopped at --limit, run again for more" : "")
         );
-        if (out.indexed > 0 || out.skipped > 0) {
+        if (out.indexed > 0 || skipped > 0) {
           suggest({ command: 'sec ask "..."', why: "ask a question about what is indexed" });
         } else {
           suggest({
@@ -111,8 +112,12 @@ export function addAskCommands(program: Command): void {
           // question is so much as read.
           if (options.index !== false) {
             const limit = options.indexLimit ?? DEFAULT_ASK_INDEX_LIMIT;
+            // This pre-index reports what it indexed and nothing about what it
+            // skipped, so it asks for no count of the latter: that count is a
+            // join over every converted filing, and a question pays for it on
+            // the way to an answer that never shows it.
             const indexed = await runWorkflowCli<IndexFilingSectionsTaskOutput>([
-              new IndexFilingSectionsTask({ defaults: { ...scope, limit } }),
+              new IndexFilingSectionsTask({ defaults: { ...scope, limit, countSkipped: false } }),
             ]);
             if (indexed.indexed > 0) {
               console.log(
