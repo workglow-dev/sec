@@ -15,6 +15,7 @@ import {
   type FilingDocument,
 } from "../../storage/document/FilingDocumentSchema";
 import { FILING_SECTION_REPOSITORY_TOKEN } from "../../storage/document/FilingSectionSchema";
+import { getDb } from "../../util/db";
 import { IndexFilingSectionsTask } from "./IndexFilingSectionsTask";
 import { kbDocIdFor } from "./selectDocumentsToIndex";
 
@@ -123,6 +124,30 @@ describe("IndexFilingSectionsTask selection", () => {
     const out = await new IndexFilingSectionsTask().run({ limit: 0 });
 
     expect(out).toMatchObject({ indexed: 0, sections: 0, skipped: 0, truncated: false });
+  });
+
+  it("does not count what is already indexed for a caller that will not show it", async () => {
+    // The count is a join over every converted filing. `sec ask` pre-indexes
+    // before every question and reports only what it indexed, so it pays for a
+    // scan of the largest table in the database to produce a number nothing
+    // renders.
+    await seed(3);
+    for (const index of [0, 1, 2]) await markIndexed(index);
+    const counted: string[] = [];
+    const db = getDb();
+    const realPrepare = db.prepare.bind(db);
+    vi.spyOn(db, "prepare").mockImplementation(((sql: string) => {
+      if (/COUNT\(\*\)/.test(sql)) counted.push(sql);
+      return realPrepare(sql);
+    }) as never);
+
+    const out = await new IndexFilingSectionsTask().run({ limit: 5, countSkipped: false });
+
+    expect(counted).toEqual([]);
+    // Absent rather than zero: zero says the index holds nothing in scope,
+    // which is the opposite of what this run knows.
+    expect(out.skipped).toBeUndefined();
+    expect(out).toMatchObject({ indexed: 0, sections: 0, truncated: false });
   });
 });
 
