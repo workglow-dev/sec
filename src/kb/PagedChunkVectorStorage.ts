@@ -127,6 +127,15 @@ export class PagedChunkVectorStorage extends SqliteVectorStorage<
  *
  * SQLite holds it as a JSON string and the tabular read usually decodes it
  * already; a row written by an older release, or handed back raw, does not.
+ *
+ * `Float32Array` is hardcoded, and so are the `vector` and `metadata` property
+ * names the scan reads, where the base class resolves all three from the schema
+ * it was constructed with. That is a duplication, not a choice: the base holds
+ * them in private fields with no accessor, and every instance of this class is
+ * the one `ChunkVectorStorageSchema` store `getSecKnowledgeBase` builds, which
+ * declares exactly those. Constructed against a different schema this would be
+ * silently wrong, so widening it means reading those three off the base rather
+ * than restating them here.
  */
 function toVector(stored: unknown): TypedArray {
   if (typeof stored === "string") return new Float32Array(JSON.parse(stored) as number[]);
