@@ -7,6 +7,7 @@
 import type {
   ChunkVectorPrimaryKey,
   ChunkVectorStorageSchema,
+  PageCursor,
   TypedArray,
   VectorSearchOptions,
 } from "workglow";
@@ -24,8 +25,11 @@ import {
  * A chunk carries its text and a JSON-encoded vector, so a page is the working
  * set: large enough that the scan is a few hundred statements over a corpus of
  * hundreds of thousands of chunks, small enough to stay a fixed cost.
+ *
+ * Exported so a test can seed exactly one page boundary rather than a number
+ * that happens to cross one today.
  */
-const SCAN_PAGE = 512;
+export const SCAN_PAGE = 512;
 
 /** A scored row, as {@link SqliteVectorStorage.similaritySearch} returns them. */
 interface Scored {
@@ -65,6 +69,14 @@ function keepBest<T extends Scored>(kept: T[], row: T, topK: number): void {
  * index here, so every question still scores every chunk and latency grows with
  * the corpus. What this removes is the heap ceiling that made a large index
  * unqueryable rather than slow.
+ *
+ * The pages are keyset (seek) pages, not `OFFSET` pages. `OFFSET n` makes the
+ * database walk and discard the first `n` rows on every page, so paging a table
+ * that way costs O(rows²) and a large index is slower to read a page at a time
+ * than to read whole — which is the opposite of what paging it is for. Resuming
+ * from the last key seen reads each row once: the ordering is the primary key,
+ * which is the index SQLite already keeps, so a page is a seek into it and the
+ * scan is linear again.
  */
 export class PagedChunkVectorStorage extends SqliteVectorStorage<
   ChunkVectorStorageSchema,
@@ -77,27 +89,33 @@ export class PagedChunkVectorStorage extends SqliteVectorStorage<
     assertVectorShape(query, this.getVectorDimensions(), "query");
     const { topK = 10, filter, scoreThreshold = 0 } = options;
 
-    type Row = NonNullable<Awaited<ReturnType<PagedChunkVectorStorage["getAll"]>>>[number];
+    type Row = Awaited<ReturnType<PagedChunkVectorStorage["getPage"]>>["items"][number];
     const kept: (Row & Scored)[] = [];
     if (topK <= 0) return emitSimilaritySearch(this.events, query, kept);
 
-    // Ordered by the primary key so the pages partition the table: LIMIT with
-    // OFFSET and no ORDER BY is free to hand back a row twice and skip another.
-    for (let offset = 0; ; offset += SCAN_PAGE) {
-      const page =
-        (await this.getAll({
-          orderBy: [{ column: "chunk_id", direction: "ASC" }],
-          limit: SCAN_PAGE,
-          offset,
-        })) ?? [];
-      for (const entity of page) {
+    // Ordered by the primary key so the pages partition the table, and resumed
+    // from the last key of the previous page rather than from a row count. The
+    // cursor is the store's own, which encodes that key and is refused if the
+    // ordering it was built under stops matching.
+    let cursor: PageCursor | undefined;
+    for (;;) {
+      const page = await this.getPage({
+        orderBy: [{ column: "chunk_id", direction: "ASC" }],
+        limit: SCAN_PAGE,
+        cursor,
+      });
+      for (const entity of page.items) {
         const metadata = (entity.metadata ?? {}) as Record<string, unknown>;
         if (filter && !matchesFilter(metadata, filter)) continue;
         const score = cosineSimilarity(query, toVector(entity.vector));
         if (score < scoreThreshold) continue;
         keepBest(kept, { ...entity, score }, topK);
       }
-      if (page.length < SCAN_PAGE) break;
+      // Both conditions. A table whose size is an exact multiple of the page
+      // hands back a cursor for its last full page, and the page after it is
+      // empty rather than absent; looping on the cursor alone would not end.
+      if (page.nextCursor === undefined || page.items.length === 0) break;
+      cursor = page.nextCursor;
     }
 
     return emitSimilaritySearch(this.events, query, kept);
