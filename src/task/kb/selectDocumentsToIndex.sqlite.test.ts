@@ -31,6 +31,7 @@ const doc = (index: number, over: Partial<FilingDocument> = {}): FilingDocument 
   char_count: 100,
   converter_version: "1",
   converted_at: "2026-01-01T00:00:00.000Z",
+  kb_indexed_at: null,
   ...over,
 });
 

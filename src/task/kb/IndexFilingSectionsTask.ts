@@ -16,7 +16,10 @@ import {
 } from "workglow";
 import { isDryRun } from "../../cli/isDryRun";
 import { getSecKnowledgeBase } from "../../kb/secKnowledgeBase";
-import type { FilingDocument } from "../../storage/document/FilingDocumentSchema";
+import {
+  FILING_DOCUMENT_REPOSITORY_TOKEN,
+  type FilingDocument,
+} from "../../storage/document/FilingDocumentSchema";
 import {
   FILING_SECTION_REPOSITORY_TOKEN,
   type FilingSection,
@@ -171,6 +174,9 @@ export class IndexFilingSectionsTask extends Task<
   ): Promise<TaskPorts<IndexFilingSectionsTaskOutput>> {
     const kb = await getSecKnowledgeBase();
     const sectionRepo = globalServiceRegistry.get(FILING_SECTION_REPOSITORY_TOKEN);
+    const documentRepo = globalServiceRegistry.has(FILING_DOCUMENT_REPOSITORY_TOKEN)
+      ? globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN)
+      : undefined;
 
     const scope = {
       cik: input.cik,
@@ -225,6 +231,12 @@ export class IndexFilingSectionsTask extends Task<
       const document = toDocument(header, sections);
       document.doc_id = docId;
       await new KbAddDocumentTask().run({ knowledgeBase: kb, document } as never);
+
+      // Stamped only after the document is in, and never treated as the
+      // authority: the selection still anti-joins `kb_document`, so a stamp
+      // this fails to write costs a traversal on the next run rather than a
+      // document that never gets indexed.
+      await documentRepo?.put({ ...header, kb_indexed_at: new Date().toISOString() });
 
       indexed += 1;
       sectionTotal += sections.length;

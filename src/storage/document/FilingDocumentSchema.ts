@@ -90,6 +90,24 @@ export const FilingDocumentSchema = Type.Object({
    */
   converter_version: Type.String({ maxLength: 32, description: "Converter version stamp" }),
   converted_at: Type.String({ description: "ISO 8601 timestamp" }),
+  /**
+   * When this document entered the knowledge base, or null while it has not.
+   *
+   * A denormalisation of "is there a `kb_document` row for this", and it earns
+   * its keep in the one regime the index selection spends its life in. `ask`
+   * pre-indexes before every question, so after the first question the
+   * selection matches nothing — and a `LIMIT` that never fills has to visit
+   * every candidate to learn that. Against a partial index over the nulls, the
+   * steady state is an empty index scan instead of the whole table.
+   *
+   * It is a fast path, never the authority: the anti-join against
+   * `kb_document` still runs, so a stamp that is missing or stale costs a
+   * traversal rather than a document indexed twice. That direction matters,
+   * because indexing twice spends embedding calls.
+   */
+  kb_indexed_at: TypeNullable(
+    Type.String({ description: "ISO 8601 timestamp the document entered the knowledge base" })
+  ),
 });
 
 export type FilingDocument = Static<typeof FilingDocumentSchema>;

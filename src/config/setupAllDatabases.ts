@@ -15,6 +15,7 @@ import {
 } from "./addMissingColumns";
 import { alignPostgresColumnTypes } from "./alignPostgresColumnTypes";
 import { dropStaleCheckConstraints } from "./dropStaleCheckConstraints";
+import { syncKbIndexedStamp } from "./kbIndexedStamp";
 import { SEC_STORAGE_REGISTRY } from "./storageRegistry";
 import { SEC_DB_FOLDER, SEC_DB_TYPE } from "./tokens";
 
@@ -49,12 +50,14 @@ export async function setupAllDatabases(): Promise<void> {
 
   // Skipped under --dry-run: these passes issue DDL through raw SQL, which the
   // repositories' ReadOnlyTabularStorage wrapper cannot intercept.
-  if (
-    dbType === "sqlite" &&
-    globalServiceRegistry.has(SEC_DB_FOLDER) &&
-    shouldAddMissingColumns("sqlite")
-  ) {
-    addMissingColumnsSqlite(getDb());
+  if (dbType === "sqlite" && globalServiceRegistry.has(SEC_DB_FOLDER)) {
+    if (shouldAddMissingColumns("sqlite")) {
+      addMissingColumnsSqlite(getDb());
+    }
+    // After the column pass, because the stamp it maintains is one of the
+    // columns that pass adds — and it must be backfilled in the same run that
+    // creates its index, never left empty.
+    syncKbIndexedStamp(getDb());
   }
   if (dbType === "postgres" && !isDryRun()) {
     if (shouldAddMissingColumns("postgres")) await addMissingColumnsPostgres();
