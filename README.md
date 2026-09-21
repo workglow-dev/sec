@@ -133,8 +133,8 @@ storage, and it is neither stable nor unflagged below those.
 shape on purpose: the re-founding retired the library surface, both binaries
 bundle their dependencies, and `import ... from "@workglow/sec"` is not something
 this package offers. A manifest with no import entry point normally reads as a
-field someone deleted by mistake, so `src/packageManifest.test.ts` asserts the
-shape — including that it stays binary-only.
+field someone deleted by mistake, so it is worth stating here: the absence is
+the decision.
 
 ### Cutting a release
 
