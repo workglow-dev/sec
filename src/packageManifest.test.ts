@@ -84,6 +84,41 @@ describe("binary-only distribution", () => {
 });
 
 /**
+ * The oldest `bunset` whose behaviour the `release` script relies on: `--auto`
+ * arrived in 1.1.0 and the 0.x bump table it reads was corrected in 1.1.1.
+ *
+ * A **floor**, not an equality, because the two directions fail differently. An
+ * older pin does not fail loudly — it takes `--auto` as an unknown flag — so
+ * something has to assert the lower bound. A newer one is the ordinary state of
+ * a maintained dependency, and asserting equality made every routine bump of it
+ * turn this suite red for a version that was never wrong.
+ */
+const BUNSET_FLOOR = [1, 1, 2] as const;
+
+type Version = readonly [number, number, number];
+
+/**
+ * `[major, minor, patch]`, or `undefined` when the value is not a bare version.
+ *
+ * A range (`^1.1.2`, `~1.1.2`, `*`) is deliberately not parsed: the point of the
+ * assertion is that a release tool resolves to one known version on every
+ * machine, so a range is a failure of this test rather than an input to it.
+ */
+function exactVersion(value: string | undefined): Version | undefined {
+  const match = /^(\d+)\.(\d+)\.(\d+)$/.exec(value ?? "");
+  if (match === null) return undefined;
+  return [Number(match[1]), Number(match[2]), Number(match[3])] as const;
+}
+
+/** Whether `version` is at or above `floor`, compared field by field. */
+function atLeast(version: Version, floor: Version): boolean {
+  for (let i = 0; i < 3; i++) {
+    if (version[i] !== floor[i]) return version[i] > floor[i];
+  }
+  return true;
+}
+
+/**
  * On a 0.x line the minor is the break slot, so a consumer on `^0.1.5` resolves
  * a patch on their next install. `release` used to cut a patch unconditionally
  * and offer the minor as a second script, which left the number to whoever
@@ -113,9 +148,15 @@ describe("release scripts", () => {
     }
   });
 
-  it("pins a bunset that has `--auto`", () => {
-    // `--auto` arrived in 1.1.0 and the 0.x bump table it uses was corrected in
-    // 1.1.1. An older pin does not fail loudly — it takes the flag as unknown.
-    expect(manifest.devDependencies?.bunset).toBe("1.1.1");
+  it("pins a bunset at or above the floor `--auto` needs", () => {
+    const pinned = manifest.devDependencies?.bunset;
+    const version = exactVersion(pinned);
+    if (version === undefined) {
+      expect.fail(`bunset must be pinned to an exact version, got ${JSON.stringify(pinned)}`);
+    }
+    expect(
+      atLeast(version, BUNSET_FLOOR),
+      `bunset is pinned to ${pinned}, below the ${BUNSET_FLOOR.join(".")} floor`
+    ).toBe(true);
   });
 });
