@@ -387,6 +387,11 @@ export class ConvertFilingDocumentTask extends Task<
         char_count: doc.charCount,
         converter_version: FILING_CONVERTER_VERSION,
         converted_at: convertedAt,
+        // Freshly converted markdown is not in the knowledge base yet, and a
+        // RE-conversion at a newer converter version has replaced the text the
+        // knowledge base holds — so both start unindexed. Narrower than the
+        // anti-join beside it, never wider, which is the safe direction.
+        kb_indexed_at: null,
       });
     }
 

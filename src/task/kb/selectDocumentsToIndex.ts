@@ -6,6 +6,7 @@
 
 import type { PageCursor } from "workglow";
 import { globalServiceRegistry } from "workglow";
+import { kbIndexedStampAvailable } from "../../config/kbIndexedStamp";
 import { KB_DOCUMENT_TABLE } from "../../kb/secKbTables";
 import {
   FILING_DOCUMENT_REPOSITORY_TOKEN,
@@ -113,7 +114,20 @@ export async function selectDocumentsToIndex(
   // transaction as the section rows, so it is the same answer reading them
   // gives.
   clauses.push("d.`section_count` > 0");
-  if (antiJoin) clauses.push("k.`doc_id` IS NULL");
+  if (antiJoin) {
+    clauses.push("k.`doc_id` IS NULL");
+    // The fast path, and only ever a narrowing of the anti-join beside it. In
+    // the regime `ask` lives in — pre-index before every question, so nothing
+    // is left to do — the anti-join alone still has to visit every candidate
+    // before a LIMIT that never fills can conclude it is empty. This clause
+    // answers that from a partial index over the nulls, which a fully indexed
+    // corpus leaves empty.
+    //
+    // Conditional on the column existing because `db setup` backfills it in the
+    // same pass that creates the index, so its presence is what says the values
+    // can be trusted. Where it is absent the query is exactly what it was.
+    if (kbIndexedStampAvailable(getDb())) clauses.push("d.`kb_indexed_at` IS NULL");
+  }
   // SQLite numbers `?` by position, so the limit binds last because it is
   // written last.
   if (options.limit !== undefined) params.push(options.limit);

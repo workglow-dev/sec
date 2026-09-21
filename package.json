@@ -12,7 +12,7 @@
   "homepage": "https://workglow.dev",
   "description": "A worked example of the Workglow libraries: SEC EDGAR and Form ADV ingestion, filing-to-markdown conversion, and retrieval-grounded question answering over what filings say.",
   "scripts": {
-    "release-checks": "bun run format && bun run lint && bun run typecheck && bun run build && bun run prepack-check",
+    "release-checks": "bun run format-check && bun run lint && bun run typecheck && bun run build && bun run test && bun run prepack-check",
     "release": "bun run release-checks && bunset --auto --push --commit --tag",
     "prepack-check": "bun ./scripts/checkPackedContents.ts",
     "dev": "concurrently -c 'auto' -n 'sec:' 'bun:dev-*'",
@@ -52,27 +52,19 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.0",
-    "@huggingface/transformers-structured-output": "^4.3.0",
-    "@modelcontextprotocol/sdk": "^1.30.0",
     "@workglow/cli": "0.6.7",
     "cheerio": "^1.2.0",
-    "cheerio-json-mapper": "^1.0.4",
     "commander": "^15.0.0",
-    "compromise": "^14.17.0",
     "csv-parse": "^7.0.2",
     "fast-xml-parser": "^5.11.1",
     "html-entities": "^2.6.0",
-    "pdf2json": "^4.1.0",
     "pg": "^8.23.0",
     "typebox": "1.3.34",
-    "words-to-numbers": "^1.5.1",
-    "workglow": "0.6.7",
-    "xml2js": "^0.6.2"
+    "workglow": "0.6.7"
   },
   "devDependencies": {
     "@types/bun": "1.4.2",
     "@types/pg": "^8.23.1",
-    "@types/xml2js": "^0.4.14",
     "bunset": "1.1.2",
     "concurrently": "^10.0.5",
     "oxfmt": "0.68.0",

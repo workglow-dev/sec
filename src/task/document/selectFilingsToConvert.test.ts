@@ -61,6 +61,7 @@ async function markConverted(
     char_count: 100,
     converter_version: version,
     converted_at: "2026-08-01T00:00:00.000Z",
+    kb_indexed_at: null,
   });
 }
 

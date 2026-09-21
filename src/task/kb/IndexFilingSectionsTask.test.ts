@@ -34,6 +34,7 @@ const header = (index: number, filingDate: string): FilingDocument => ({
   char_count: 100,
   converter_version: "1",
   converted_at: "2026-01-01T00:00:00.000Z",
+  kb_indexed_at: null,
 });
 
 /**
@@ -212,5 +213,29 @@ describe("IndexFilingSectionsTask under --dry-run", () => {
 
     expect(upsert).toHaveBeenCalledTimes(1);
     expect(out).toMatchObject({ success: true, indexed: 1, sections: 1 });
+  });
+
+  it("stamps kb_indexed_at on what it indexed, and leaves it alone on a dry run", async () => {
+    // The stamp is what lets the next run answer "anything to index?" from a
+    // partial index rather than a traversal. A dry run indexes nothing, so it
+    // must claim nothing either.
+    const kb = await getSecKnowledgeBase();
+    vi.spyOn(kb, "upsert").mockResolvedValue({
+      doc_id: "0000320193-26-000000:primary.htm",
+    } as never);
+    const stamp = () =>
+      (
+        getDb().prepare("SELECT `kb_indexed_at` AS s FROM `filing_document` LIMIT 1").get() as
+          | { s: string | null }
+          | undefined
+      )?.s ?? null;
+
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
+    await new IndexFilingSectionsTask().run({});
+    expect(stamp()).toBeNull();
+
+    globalServiceRegistry.registerInstance(SEC_DRY_RUN, false);
+    await new IndexFilingSectionsTask().run({});
+    expect(stamp()).not.toBeNull();
   });
 });

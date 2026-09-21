@@ -39,6 +39,7 @@ const documentRow = (accession: string, docFile: string, isPrimary: boolean) => 
   char_count: 900,
   converter_version: VERSION,
   converted_at: "2026-03-02T00:00:00.000Z",
+  kb_indexed_at: null,
 });
 
 /**
