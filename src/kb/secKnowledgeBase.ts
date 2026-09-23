@@ -20,6 +20,7 @@ import {
 } from "workglow";
 import { isDryRun } from "../cli/isDryRun";
 import { SecCliConfigurationError } from "../config/EnvToDI";
+import { clearKbIndexedStampIfIndexEmpty } from "../config/kbIndexedStamp";
 import { secEmbeddingDimensions, secEmbeddingModel } from "../config/models";
 import { SEC_DB_TYPE } from "../config/tokens";
 import { getDb } from "../util/db";
@@ -192,6 +193,12 @@ export async function getSecKnowledgeBase(): Promise<KnowledgeBase> {
     await documents.setupDatabase();
     await chunks.setupDatabase();
     await index.setupDatabase();
+    // An index holding no documents contradicts any `kb_indexed_at` stamp a
+    // previous one left behind — dropping these tables is how the embedding
+    // model is changed, and the DDL above re-creates them empty. The selection
+    // reads that stamp as a narrowing of its anti-join, so left standing it
+    // would keep every previously indexed filing out of the rebuild.
+    clearKbIndexedStampIfIndexEmpty(db);
   }
 
   const model = secEmbeddingModel();
