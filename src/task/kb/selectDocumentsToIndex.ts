@@ -126,6 +126,12 @@ export async function selectDocumentsToIndex(
     // Conditional on the column existing because `db setup` backfills it in the
     // same pass that creates the index, so its presence is what says the values
     // can be trusted. Where it is absent the query is exactly what it was.
+    //
+    // What keeps it a narrowing and not a filter of its own is that the stamp
+    // is cleared wherever the knowledge base stops backing it — by `db setup`
+    // per row, and by opening an index that holds nothing. A stamp outliving
+    // its `kb_document` row would exclude a document the anti-join beside it
+    // selects, which is the one direction this clause must never take.
     if (kbIndexedStampAvailable(getDb())) clauses.push("d.`kb_indexed_at` IS NULL");
   }
   // SQLite numbers `?` by position, so the limit binds last because it is
