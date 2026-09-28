@@ -20,6 +20,7 @@ import type {
   TabularEventParameters,
   TabularSubscribeOptions,
   TypedArraySchemaOptions,
+  UniqueKeyPutResult,
 } from "workglow";
 
 /**
@@ -43,6 +44,18 @@ export class ReadOnlyTabularStorage<
 
   async put(_value: InsertType): Promise<Entity> {
     return _value as unknown as Entity;
+  }
+
+  /**
+   * Reports an overwrite rather than an insert: `inserted: true` tells a caller
+   * nothing can be keyed by the row yet, so it would skip reading back rows that
+   * the underlying storage does hold.
+   */
+  async putByUniqueKey(
+    value: InsertType,
+    _uniqueKey: ReadonlyArray<keyof Entity>
+  ): Promise<UniqueKeyPutResult<Entity>> {
+    return { entity: value as unknown as Entity, inserted: false };
   }
 
   async putBulk(values: InsertType[]): Promise<Entity[]> {
