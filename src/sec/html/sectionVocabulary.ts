@@ -70,7 +70,7 @@ export const SECTION_HEADING_PATTERNS: Readonly<Record<S1SectionName, readonly R
     // Same FINRA-style conflicts qualifier the underwriting heading already
     // accepts. Live 2134856 Karman Line heads the roster
     // `Management — Conflicts of Interest` (em dash or glued em dash).
-    /^\s*(our\s+)?management\s*(\(conflicts of interest\)|[-–—:]\s*conflicts of interest)\s*$/i,
+    /^\s*(our\s+)?management\s*(\(conflicts? of interest\)|[-–—:]\s*conflicts of interest)\s*$/i,
     // Karman's actual SectionNode title. The conflicts qualifier above is a
     // cross-ref spelling; the converter emits `MANAGEMENT AND ADVISORS`.
     /^\s*(our\s+)?management and advisors?\s*$/i,
@@ -111,7 +111,7 @@ export const SECTION_HEADING_PATTERNS: Readonly<Record<S1SectionName, readonly R
     // or as a dash clause. `TPG Pace Beneficial Finance Corp.` heads it
     // `UNDERWRITING—CONFLICTS OF INTEREST` with an em dash and no spaces, and
     // the parenthesized form alone lost the whole underwriter list.
-    /^\s*underwriting\s*(\(conflicts of interest\)|[-–—:]\s*conflicts of interest)\s*$/i,
+    /^\s*underwriting\s*(\(conflicts? of interest\)|[-–—:]\s*conflicts of interest)\s*$/i,
     /^\s*plan of distribution\s*$/i,
   ],
   [S1_SECTIONS.USE_OF_PROCEEDS]: [/^\s*use of proceeds\s*$/i],
