@@ -1,5 +1,54 @@
 # Changelog
 
+## 0.2.1
+
+### Bug Fixes
+
+- update regex patterns for management and underwriting section headings to allow optional "conflicts of interest" phrasing
+- give ReadOnlyTabularStorage a putByUniqueKey no-op
+- keep the kb_indexed_at stamp honest, and out of a dry run
+- close the three open gaps in the release gate, the manifest and `ask`
+
+#### kb
+
+- honour --dry-run when indexing, and page the chunk scan (#364)
+
+#### adv
+
+- bound the ingest folder and keep the newest filing per CRD (#363)
+
+### Performance
+
+#### kb
+
+- page kb_chunk by key rather than by offset (#373)
+
+### Chores
+
+- update deps
+- update deps
+- update deps
+- update workglow
+- update deps, including transformers 4.3
+
+#### vscode
+
+- update settings for TypeScript and JavaScript formatting
+
+### Updated Dependencies
+
+- `@huggingface/transformers`: ^4.3.0
+- `@workglow/cli`: 0.6.11
+- `csv-parse`: ^7.0.3
+- `fast-xml-parser`: ^5.11.2
+- `typebox`: 1.3.34
+- `workglow`: 0.6.11
+- `bunset`: 1.1.2
+- `oxfmt`: 0.71.0
+- `oxlint`: ^1.86.0
+- `oxlint-tsgolint`: ^7.0.2003
+- `vitest`: ^5.0.2
+
 ## 0.2.0
 
 ### Features
