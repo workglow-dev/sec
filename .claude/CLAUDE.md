@@ -35,7 +35,7 @@ independently, and a comment must explain the code in front of it.
 ```bash
 bun install
 bun run build                # bundles the two binaries
-bun run typecheck            # tsc --noEmit over src, scripts AND tests
+bun run typecheck            # bun check over src, scripts AND tests
 bun run test                 # vitest run
 bunx vitest run <file>       # what you normally want — the full suite is slow
 bun run lint                 # oxlint + tsgolint type-aware rules; CI runs this

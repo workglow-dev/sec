@@ -26,7 +26,7 @@
     "build-sec": "bun build --target=bun --packages=external --outfile ./dist/sec.js ./src/sec.ts && bun ./scripts/shebang-bin.ts ./dist/sec.js && bun run build-sec-base",
     "build-sec-base": "bun build --target=bun --packages=external --outfile ./dist/libs-cli.js ./src/libs-cli.ts && bun ./scripts/shebang-bin.ts ./dist/libs-cli.js && bun run build-hft-worker",
     "build-hft-worker": "bun build --target=bun --packages=external --outfile ./dist/hftWorker.js ./src/config/hftWorker.ts",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "bun check",
     "use-source": "bun ./scripts/bunsrc.ts source",
     "use-dist": "bun ./scripts/bunsrc.ts dist",
     "link": "bun link",
@@ -48,7 +48,7 @@
   ],
   "engines": {
     "node": ">=24",
-    "bun": ">=1.4.0"
+    "bun": ">=1.4.3"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.3.1",

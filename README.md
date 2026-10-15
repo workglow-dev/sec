@@ -118,7 +118,7 @@ and nothing else.
 
 ```sh
 bun run test          # vitest
-bun run typecheck     # tsc --noEmit over src, scripts and tests
+bun run typecheck     # bun check over src, scripts and tests
 bun run lint          # oxlint + type-aware rules
 bun run format        # oxfmt
 ```
