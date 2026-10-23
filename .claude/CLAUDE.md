@@ -42,15 +42,27 @@ bun run lint                 # oxlint + tsgolint type-aware rules; CI runs this
 bun run format               # oxfmt write — run before pushing
 ```
 
-CI runs `format-check` → `lint` → `typecheck` → `build` → `test`, cheapest first.
+CI and `bun run release-checks` run one gate list, `GATES` in
+`scripts/releaseChecks.ts`: `format-check` → `lint` → `typecheck` → `build` →
+`prepack-check` → `smoke-bins` → `test`, cheapest first. Add a gate there, never
+as a workflow step of its own — `toolchainPins.test.ts` fails on a restated one.
+`smoke-bins` starts each built binary unconfigured and requires `--help` and
+`--version` to exit 0.
 
 **Tests are vitest with `pool: "forks"` and `isolate: true`.** Run them with
 `bunx vitest run`, never `bun test`: the Bun shim does not give each file a fresh
 module registry, so `globalServiceRegistry` leaks between files.
 
-**Node 24, Bun 1.4+.** `node:sqlite` backs the SQLite storage and is neither stable
+**Node 24, Bun 1.4.3.** `node:sqlite` backs the SQLite storage and is neither stable
 nor unflagged below those. A subprocess CLI test on an older Bun fails with what
 reads like a storage bug.
+
+**Bun is pinned once, in `packageManager` (`bun@1.4.3`)**, and CI installs exactly
+that (`setup-bun` reads it from `package.json`). `typecheck` is `bun check`, so a
+Bun release could otherwise turn an unchanged commit red. `engines.bun` is the
+same version as a floor and `@types/bun` is the same version exactly;
+`toolchainPins.test.ts` fails when they disagree, so bump all three in one
+commit. `bun-latest.yml` runs the gates on the newest Bun weekly, gating nothing.
 
 There is one tsconfig covering src, scripts and tests. It emits nothing — the
 binaries bundle — so there is no declaration build to keep tests out of.

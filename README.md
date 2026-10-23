@@ -123,9 +123,12 @@ bun run lint          # oxlint + type-aware rules
 bun run format        # oxfmt
 ```
 
-Node 24 and Bun 1.4+, declared as `engines` so a lower Node fails at install
+Node 24 and Bun 1.4.3, declared as `engines` so a lower Node fails at install
 rather than later inside `node:sqlite`. `node:sqlite` is what backs the SQLite
-storage, and it is neither stable nor unflagged below those.
+storage, and it is neither stable nor unflagged below those. CI runs exactly
+Bun 1.4.3, read from `packageManager` in `package.json` — the one place the
+version is written, since `typecheck` is `bun check` and a new Bun can change
+its answer on an unchanged commit.
 
 ### The package is two binaries, not a library
 
@@ -139,7 +142,9 @@ the decision.
 ### Cutting a release
 
 `bun run release-checks` is the gate set (format, lint, typecheck, build, packed
-contents). One script runs it and then bumps:
+contents, a start of each built binary with no configuration, tests) — the same
+list CI runs on every push, from `scripts/releaseChecks.ts`. One script runs it
+and then bumps:
 
 ```sh
 bun run release

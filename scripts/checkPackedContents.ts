@@ -35,7 +35,10 @@ import { findSourceStubs } from "./sourceStubs";
 // not when src sneaks back in.
 const MAX_UNPACKED_BYTES = 8_000_000; // 8 MB
 const FORBIDDEN_SUFFIXES = [".test.ts", ".map"] as const;
-const FORBIDDEN_PREFIXES = ["src/sec/html/mock_data/"] as const;
+// Any `src/` path is a leak: `files` ships `dist` alone, so a source file in
+// the listing means `files` or `.npmignore` widened. The size ceiling only
+// catches a leak big enough to cross it.
+const FORBIDDEN_PREFIXES = ["src/"] as const;
 const FORBIDDEN_SUBSTRINGS = ["/mock_data/"] as const;
 
 /**
@@ -214,7 +217,7 @@ async function main(): Promise<void> {
     const extra = forbidden.length > 10 ? `\n  ... and ${forbidden.length - 10} more` : "";
     violations.push(
       `${forbidden.length} forbidden file(s) would be published ` +
-        `(tests / mock_data are not part of the shipped package):\n  ${sample}${extra}`
+        `(source, tests and mock_data are not part of the shipped package):\n  ${sample}${extra}`
     );
   }
 

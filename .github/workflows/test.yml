@@ -25,15 +25,15 @@ jobs:
       - uses: actions/setup-node@v6
         with:
           node-version: "24"
+      # The Bun pinned by `packageManager`, not `latest`: `typecheck` is
+      # `bun check`, so a Bun release can change a run's result on a commit
+      # that did not change. `bun-latest.yml` watches for that drift.
       - uses: oven-sh/setup-bun@v2
         with:
-          bun-version: latest
+          bun-version-file: package.json
       - run: bun i
-      - run: bun run format-check
-      # oxlint + tsgolint. Needs no build of its own: the type-aware rules
-      # resolve `@workglow/*` through the published `dist/*.d.ts` that `bun i`
-      # already put in node_modules.
-      - run: bun run lint
-      - run: bun run typecheck
-      - run: bun run build
-      - run: bun run test
+      # The gate list `release` runs, from the one script both call
+      # (`scripts/releaseChecks.ts`); each gate is its own log group. lint needs
+      # no build of its own: the type-aware rules resolve `@workglow/*` through
+      # the published `dist/*.d.ts` that `bun i` already put in node_modules.
+      - run: bun run release-checks
