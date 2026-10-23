@@ -90,21 +90,23 @@ describe("buildParseTrace", () => {
    * furniture rules moves it without anything being lost. `lostChars` is the
    * defect signal on its own, and it is 0 across all 44 committed fixtures, so
    * the assertion can be the property rather than a number to maintain.
+   *
+   * One case per fixture rather than one body over all of them: the largest
+   * is 7 MB and the four together took ~5 s idle, so under full-suite load
+   * the single body crossed the 30 s test timeout while no one fixture comes
+   * near it. Split, a timeout or a loss also names the fixture it came from.
    */
-  it("loses no content on committed fixtures", () => {
-    const fixtures = [
-      "s1_1563568_000143774926013504.htm",
-      "s1_1849470_000110465921035696.htm",
-      "s1_1925283_000162828026027260.htm",
-      "s1_2049662_000110465926079324.htm",
-    ];
-    const losses = fixtures.flatMap((name) => {
-      const { coverage } = buildParseTrace(readFileSync(join(fixtureRoot, name), "utf8"), name);
-      return coverage.lostChars === 0
-        ? []
-        : [`${name}: ${coverage.lostChars} chars in ${coverage.lostRuns} runs`];
+  it.each([
+    "s1_1563568_000143774926013504.htm",
+    "s1_1849470_000110465921035696.htm",
+    "s1_1925283_000162828026027260.htm",
+    "s1_2049662_000110465926079324.htm",
+  ])("loses no content on committed fixture %s", (name) => {
+    const { coverage } = buildParseTrace(readFileSync(join(fixtureRoot, name), "utf8"), name);
+    expect({ lostChars: coverage.lostChars, lostRuns: coverage.lostRuns }).toEqual({
+      lostChars: 0,
+      lostRuns: 0,
     });
-    expect(losses).toEqual([]);
   });
 
   /**
