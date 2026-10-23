@@ -7,6 +7,7 @@
 import { Type } from "typebox";
 import { Task } from "workglow";
 import type { ExemptOfferingFormCode } from "../../sec/forms/exempt-offerings/form-slugs";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { fetchFixtures } from "./fetchFixtures";
 
 export type FetchFixturesTaskInput = {
@@ -54,7 +55,7 @@ export class FetchFixturesTask extends Task<FetchFixturesTaskInput, FetchFixture
       count: input.count,
       quarters: input.quarters,
       listOnly: input.listOnly,
-      log: (msg) => console.log(msg),
+      log: reportDiagnostic,
     });
     return {
       downloaded: result.downloaded,

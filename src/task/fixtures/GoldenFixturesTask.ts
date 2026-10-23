@@ -6,6 +6,7 @@
 
 import { Type } from "typebox";
 import { Task } from "workglow";
+import { reportDiagnostic } from "../../util/diagnostics";
 import type { GoldenFixtureMode } from "./goldenFixtures";
 import { runGoldenFixtures } from "./goldenFixtures";
 import { edgarGoldenFixtureDeps } from "./goldenFixtureSource";
@@ -55,7 +56,7 @@ export class GoldenFixturesTask extends Task<GoldenFixturesTaskInput, GoldenFixt
     const result = await runGoldenFixtures({
       mode: input.mode ?? "download",
       force: input.force,
-      deps: edgarGoldenFixtureDeps((msg) => console.log(msg)),
+      deps: edgarGoldenFixtureDeps(reportDiagnostic),
     });
     return {
       ok: result.ok,

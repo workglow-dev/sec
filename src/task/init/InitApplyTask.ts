@@ -99,14 +99,11 @@ export class InitApplyTask extends Task<TaskPorts<InitApplyTaskInput>, InitApply
   async execute(input: TaskPorts<InitApplyTaskInput>): Promise<InitApplyTaskOutput> {
     const { envPath, ...config } = input;
 
+    // What this did is reported by `sec setup` from the output ports, once the
+    // run's frame has closed, rather than printed underneath it.
     writeFileSync(envPath, buildEnvConfig(config), "utf-8");
-    console.log(`Wrote ${envPath}`);
-
     mkdirSync(config.dbFolder, { recursive: true });
-    console.log(`Created directory: ${config.dbFolder}`);
-
     mkdirSync(config.rawDataFolder, { recursive: true });
-    console.log(`Created directory: ${config.rawDataFolder}`);
 
     // Re-read env so DI picks up new values. Push every var the
     // wizard collected, including the Postgres set — assertSecCliEnvConfigured
@@ -131,7 +128,6 @@ export class InitApplyTask extends Task<TaskPorts<InitApplyTaskInput>, InitApply
     DefaultDI();
 
     await setupAllDatabases();
-    console.log("Database tables created.");
 
     return { envPath, dbFolder: config.dbFolder, rawDataFolder: config.rawDataFolder };
   }

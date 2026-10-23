@@ -151,6 +151,18 @@ everything else as its primary document. 8-K is unconditional because its primar
 document is routinely four sentences pointing at the EX-99.1 that carries the news
 — for that form the exhibits *are* the filing, and only the `.txt` has them.
 
+**Diagnostics are buffered, not printed.** Anything a task wants to tell an
+operator — a CIK that failed, a skipped row, a closing summary, what a dry run
+would have done — goes through `reportDiagnostic` / `reportDryRun`
+(`src/util/diagnostics.ts`), never `console.*`. `runWorkflowCli` holds them until
+the run settles and prints them after the frame closes; outside a run they fall
+through to `console.warn`. A console write underneath the live Ink frame shifts
+the lines its erase is counting, so the tail of the message is what gets
+overwritten. Progress text goes through the task's `updateProgress`. The count is
+pinned per file in `CONSOLE_DIAGNOSTIC_BUDGET`, exact in both directions, over
+every tree but `src/cli/` (commands render their answer after the run);
+`consoleDiagnostics.test.ts` fails on a new write.
+
 **`FILING_CONVERTER_VERSION` is the only version knob left.** Bump it by hand after
 a parser change to re-select already-converted filings; never truncate, since a
 half-finished re-run then leaves the old rows readable.

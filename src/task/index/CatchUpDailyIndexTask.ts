@@ -16,6 +16,7 @@ import {
   DAILY_INDEX_CURSOR_ID,
   DAILY_INDEX_CURSOR_REPOSITORY_TOKEN,
 } from "../../storage/processing/DailyIndexCursorSchema";
+import { reportDryRun } from "../../util/diagnostics";
 import { TypeSecDate } from "../../util/parseDate";
 import { getHttpErrorStatus } from "../fetch/SecFetchJob";
 import {
@@ -155,7 +156,7 @@ export class CatchUpDailyIndexTask extends Task<
     });
 
     if (isDryRun()) {
-      console.log(`Would fetch completed [${plan.completed.join(", ")}], today ${plan.today}`);
+      reportDryRun(`Would fetch completed [${plan.completed.join(", ")}], today ${plan.today}`);
       return {
         success: true,
         fetched: 0,

@@ -17,6 +17,7 @@ import {
 import { CIK_LAST_UPDATE_REPOSITORY_TOKEN } from "../../storage/processing/CikLastUpdateSchema";
 import { PROCESSED_SUBMISSIONS_REPOSITORY_TOKEN } from "../../storage/processing/ProcessedSubmissionsSchema";
 import { todayYYYYdMMdDD } from "../../util/dataCleaningUtils";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { FetchSubmissionsOutput, FetchSubmissionsTask } from "./FetchSubmissionsTask";
 import { StoreSubmissionEntityTask } from "./StoreSubmissionEntityTask";
 import { StoreSubmissionFilingsTask } from "./StoreSubmissionFilingsTask";
@@ -130,7 +131,7 @@ export async function recordCikLastUpdate(
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : String(e);
-    console.warn(`Failed to record cik_last_update for CIK ${cik}: ${message}`);
+    reportDiagnostic(`Failed to record cik_last_update for CIK ${cik}: ${message}`);
   }
 }
 

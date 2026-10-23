@@ -30,6 +30,7 @@ import {
   type ExemptOfferingFormCode,
 } from "../../sec/forms/exempt-offerings/form-slugs";
 import { accessionFromFileName, accessionWithoutDashes } from "../../util/accession";
+import { reportDiagnostic } from "../../util/diagnostics";
 import {
   FetchQuarterlyFormIdxTask,
   type QuarterlyFormIdxRow,
@@ -235,7 +236,7 @@ export async function fetchFixtures(
   }
   parseQuarterStrings(quarters); // validate shape
 
-  console.log(`[sec fetch] output dir: ${MOCK_ROOT}`);
+  reportDiagnostic(`[sec fetch] output dir: ${MOCK_ROOT}`);
 
   // Pull form.idx for each requested quarter (cached on disk via the
   // SecCachedFetchTask layer; second runs in the same quarter are free).

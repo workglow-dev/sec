@@ -16,6 +16,7 @@ import {
   type FilingSection,
 } from "../../storage/document/FilingSectionSchema";
 import { cachedAccessionDocPath, resolvePrimaryDocName } from "../../util/accessionDocPath";
+import { reportDryRun } from "../../util/diagnostics";
 import {
   convertFilingSubmission,
   FILING_CONVERTER_VERSION,
@@ -294,7 +295,7 @@ export class ConvertFilingDocumentTask extends Task<
 
     if (isDryRun()) {
       const sections = converted.reduce((sum, doc) => sum + doc.sections.length, 0);
-      console.log(
+      reportDryRun(
         `Would convert ${input.accessionNumber} (${source.docFile}) to ` +
           `${converted.length} documents, ${sections} sections`
       );

@@ -23,6 +23,7 @@
 
 import { existsSync, mkdirSync, readdirSync, writeFileSync } from "fs";
 import { join, resolve } from "path";
+import { reportDiagnostic } from "../../util/diagnostics";
 
 export const DEFAULT_S1_SAMPLE_COUNT = 10;
 export const DEFAULT_MIN_SPAC = 3;
@@ -139,7 +140,7 @@ export async function fetchS1Fixtures(
   const shuffle = deps.shuffle ?? defaultShuffle;
 
   if (!existsSync(cacheDir)) mkdirSync(cacheDir, { recursive: true });
-  console.log(`[sec fetch] output dir: ${cacheDir}`);
+  reportDiagnostic(`[sec fetch] output dir: ${cacheDir}`);
 
   log("Listing recent S-1 candidates ...");
   const candidates = await deps.listCandidates();

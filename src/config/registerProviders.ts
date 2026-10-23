@@ -42,6 +42,9 @@
  * it never aborts the CLI or the other providers. Registration is idempotent
  * enough for repeat bootstraps — the provider registry keeps the last registrant.
  */
+
+import { reportDiagnostic } from "../util/diagnostics";
+
 /**
  * Where the worker entry actually is, which differs between the two ways this
  * module runs. From source `import.meta.url` is this file under `src/config/`
@@ -112,5 +115,5 @@ async function registerHft(): Promise<void> {
 
 function warn(provider: string, err: unknown): void {
   const msg = err instanceof Error ? err.message : String(err);
-  console.warn(`AI provider "${provider}" not registered: ${msg}`);
+  reportDiagnostic(`AI provider "${provider}" not registered: ${msg}`);
 }

@@ -7,6 +7,7 @@
 import { Static, Type } from "typebox";
 import { Format } from "typebox/format";
 import { ArrayToObject } from "workglow";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { TypeNullable } from "../../util/TypeBoxUtil";
 import { TypeSecCik } from "../../util/TypeSecCik";
 import { ALL_FORM_NAMES } from "../forms/all-forms";
@@ -16,7 +17,7 @@ export { TypeSecCik } from "../../util/TypeSecCik";
 // const TypeSECForm = () => Type.Union(ALL_FORM_NAMES.map((f) => Type.Literal(f)));
 
 Format.Set("sec-form", (value: string) => {
-  if (!ALL_FORM_NAMES.includes(value as any)) console.warn(`Unknown SEC form: ${value}`);
+  if (!ALL_FORM_NAMES.includes(value as any)) reportDiagnostic(`Unknown SEC form: ${value}`);
   return true;
 });
 export const TypeSECForm = (annotations: Record<string, unknown> = {}) =>

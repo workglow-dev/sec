@@ -72,15 +72,12 @@ export class FetchSubmissionsTask extends Task<FetchSubmissionsTaskInput, FetchS
         title: `Download CIK ${cik} submissions`,
       }),
       async function cleanupInput(input) {
-        try {
-          const edgarJson = Value.Encode(FullCompanySubmissionSchema(), input.json);
-          const { filings, ...submission } = edgarJson;
-          const { recent, files } = filings;
-          return { submission, filings: recent, files };
-        } catch (e) {
-          console.error(e);
-          throw e;
-        }
+        // A throw carries its own error to the caller; printing it here as
+        // well wrote it underneath the live frame.
+        const edgarJson = Value.Encode(FullCompanySubmissionSchema(), input.json);
+        const { filings, ...submission } = edgarJson;
+        const { recent, files } = filings;
+        return { submission, filings: recent, files };
       },
       async function combineFilings(input, config) {
         const graph = config.own(new TaskGraph(), { title: `Fetch paged filings for CIK ${cik}` });

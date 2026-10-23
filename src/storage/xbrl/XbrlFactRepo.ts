@@ -5,6 +5,7 @@
  */
 
 import { globalServiceRegistry } from "workglow";
+import { reportDiagnostic } from "../../util/diagnostics";
 import {
   XBRL_FACT_REPOSITORY_TOKEN,
   type XbrlFactRepositoryStorage,
@@ -45,7 +46,7 @@ export class XbrlFactRepo {
     opts: { readonly intentionalClear?: boolean } = {}
   ): Promise<void> {
     if (rows.length === 0 && !opts.intentionalClear) {
-      console.warn(
+      reportDiagnostic(
         `XbrlFactRepo.replaceForAccession: 0 rows for ${accession_number} without intentionalClear — no-op`
       );
       return;

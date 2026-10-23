@@ -25,6 +25,7 @@ import {
   type FilingSection,
 } from "../../storage/document/FilingSectionSchema";
 import { accessionWithoutDashes } from "../../util/accession";
+import { reportDryRun } from "../../util/diagnostics";
 import type { TaskPorts } from "../taskPorts";
 import { countAlreadyIndexed, kbDocIdFor, selectDocumentsToIndex } from "./selectDocumentsToIndex";
 
@@ -209,7 +210,7 @@ export class IndexFilingSectionsTask extends Task<
     // between an upsert here and a committed row. The selection above is a
     // read, so it still reports what the run would do.
     if (isDryRun()) {
-      console.log(`Would index ${work.length} filing(s) into the knowledge base.`);
+      reportDryRun(`Would index ${work.length} filing(s) into the knowledge base.`);
       return { success: true, indexed: 0, sections: 0, skipped, truncated };
     }
 

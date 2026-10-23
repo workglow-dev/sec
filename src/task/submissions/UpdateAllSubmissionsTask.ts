@@ -12,6 +12,7 @@ import {
   PROCESSED_SUBMISSIONS_REPOSITORY_TOKEN,
   type ProcessedSubmissions,
 } from "../../storage/processing/ProcessedSubmissionsSchema";
+import { reportDryRun } from "../../util/diagnostics";
 import { fetchAndStoreSubmission } from "./fetchAndStoreSubmission";
 
 export type UpdateAllSubmissionsTaskInput = {
@@ -56,9 +57,9 @@ export class UpdateAllSubmissionsTask extends Task<
 
     if (isDryRun()) {
       if (input.force) {
-        console.log(`Would update ${needsUpdating.length} submissions (force — reprocessing all)`);
+        reportDryRun(`Would update ${needsUpdating.length} submissions (force — reprocessing all)`);
       } else {
-        console.log(
+        reportDryRun(
           `Would update ${needsUpdating.length} changed and ${needsInitialProcessing.length} new submissions`
         );
       }

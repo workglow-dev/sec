@@ -14,6 +14,7 @@ import {
   TaskOutput,
 } from "workglow";
 import { SEC_RAW_DATA_FOLDER } from "../../config/tokens";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { YYYYdMMdDD } from "../../util/parseDate";
 import { SecFetchFileOutputCache } from "./SecFetchFileOutputCache";
 import { SecFetchTask } from "./SecFetchTask";
@@ -134,7 +135,7 @@ export function resetFetchCacheWarningForTesting(): void {
 function warnFetchCacheDisabled(): void {
   if (warnedFetchCacheDisabled) return;
   warnedFetchCacheDisabled = true;
-  console.warn(
+  reportDiagnostic(
     `SecCachedFetchTask: SEC_RAW_DATA_FOLDER is not configured, so NO fetch cache is installed — ` +
       `every fetch re-downloads and nothing is read from disk, with no other symptom. Set it (env ` +
       `var or .env.local) to restore caching; it is also the root for accessiondocs/, so leaving ` +

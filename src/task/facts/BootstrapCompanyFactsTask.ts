@@ -13,6 +13,7 @@ import { SEC_RAW_DATA_FOLDER } from "../../config/tokens";
 import { streamProcessedCikSet } from "../../storage/processing/processedCikSet";
 import { PROCESSED_FACTS_REPOSITORY_TOKEN } from "../../storage/processing/ProcessedFactsSchema";
 import { todayYYYYdMMdDD } from "../../util/dataCleaningUtils";
+import { reportDryRun } from "../../util/diagnostics";
 import { fetchAndStoreCompanyFacts } from "./fetchAndStoreCompanyFacts";
 
 export type BootstrapCompanyFactsTaskInput = {
@@ -63,7 +64,7 @@ export class BootstrapCompanyFactsTask extends Task<
       const err = e as NodeJS.ErrnoException;
       if (err.code === "ENOENT") {
         if (isDryRun()) {
-          console.log(
+          reportDryRun(
             `Would bootstrap CIK company facts after bulk data populates ${companyfactsDir}`
           );
           return { success: true };
@@ -96,7 +97,7 @@ export class BootstrapCompanyFactsTask extends Task<
 
     if (isDryRun()) {
       const label = input.force ? "all" : "unprocessed";
-      console.log(
+      reportDryRun(
         `Would bootstrap ${ciksToProcess.length} ${label} CIK company facts (${ciks.length} total)`
       );
       return { success: true };
