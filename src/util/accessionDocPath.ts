@@ -43,10 +43,19 @@ export function resolvePrimaryDocName(primaryDoc: string | null | undefined): st
 }
 
 /**
+ * Characters a filename cannot carry into a URL path segment and still name the
+ * same file: `?` starts a query, `#` a fragment, and `%` is an escape a server
+ * may decode into `/` or `..`. EDGAR's own filenames never contain them.
+ */
+// oxlint-disable-next-line no-control-regex -- control characters are what it refuses
+const URL_UNSAFE = /[?#%\u0000-\u001f\u007f]/;
+
+/**
  * Validates a filer-authored primary-document filename before it is used to
- * compose an on-disk cache path. Rejects anything that could escape the
- * accession-doc directory (path separators, parent-directory refs, absolute
- * paths, NUL bytes) and returns the trimmed basename.
+ * compose an on-disk cache path or a sec.gov URL. Rejects anything that could
+ * escape the accession-doc directory (path separators, parent-directory refs,
+ * absolute paths, NUL bytes) or reach a different URL than the file it names
+ * ({@link URL_UNSAFE}), and returns the trimmed basename.
  */
 export function sanitizePrimaryDoc(name: string): string {
   const trimmed = name.trim();
@@ -59,11 +68,24 @@ export function sanitizePrimaryDoc(name: string): string {
     trimmed.includes("/") ||
     trimmed.includes("\\") ||
     trimmed.includes("\0") ||
-    trimmed.startsWith("/")
+    trimmed.startsWith("/") ||
+    URL_UNSAFE.test(trimmed)
   ) {
     throw new Error(`Refusing unsafe primary_doc name: ${JSON.stringify(name)}`);
   }
   return trimmed;
+}
+
+/**
+ * {@link sanitizePrimaryDoc} as a predicate: the safe name, or `undefined`
+ * where it would throw.
+ */
+export function safePrimaryDocName(name: string): string | undefined {
+  try {
+    return sanitizePrimaryDoc(name);
+  } catch {
+    return undefined;
+  }
 }
 
 /**
@@ -92,12 +114,8 @@ export function cachedAccessionDocPath(
   accessionNumber: string,
   fileName: string
 ): string | undefined {
-  let safeName: string;
-  try {
-    safeName = sanitizePrimaryDoc(fileName);
-  } catch {
-    return undefined;
-  }
+  const safeName = safePrimaryDocName(fileName);
+  if (safeName === undefined) return undefined;
   const cikDir = path.join(root, "accessiondocs", String(cik).padStart(10, "0"));
   const rel = `accessiondocs/${String(cik).padStart(10, "0")}/${accessionNumber.replaceAll(
     "-",

@@ -5,7 +5,7 @@
  */
 
 import { describe, expect, it } from "vitest";
-import type { FetchUrlTaskInput, IExecuteContext } from "workglow";
+import { type FetchUrlTaskInput, type IExecuteContext, TaskError } from "workglow";
 import { SecFetchAccessionDocTask } from "./SecFetchAccessionDocTask";
 
 describe("SecFetchAccessionDocTask", () => {
@@ -71,5 +71,56 @@ describe("SecFetchAccessionDocTask", () => {
       {} as IExecuteContext
     );
     expect(resolved.response_type).toBe("stream");
+  });
+
+  /**
+   * The name is filer-written and becomes a URL path segment here. Refusing it
+   * in the constructor, which builds the URL, means a caller that skipped the
+   * check still queues no request.
+   */
+  it.each(["../../x", "a?b", "a#b", "sub/doc.htm", "%2e%2e%2fx", ""])(
+    "refuses %j before any request exists",
+    (fileName) => {
+      const build = () =>
+        new SecFetchAccessionDocTask({
+          cik: 2097288,
+          accessionNumber: "0001213900-26-012345",
+          fileName,
+        });
+      expect(build).toThrow(TaskError);
+      expect(build).toThrow(/Refusing unsafe document name for 2097288\/0001213900-26-012345/);
+    }
+  );
+
+  it("refuses the same names from inputToUrl and inputToFileName", () => {
+    const task = new SecFetchAccessionDocTask({
+      cik: 2097288,
+      accessionNumber: "0001213900-26-012345",
+      fileName: "ea123.htm",
+    });
+    for (const fileName of ["../../x", "a?b", "a#b"]) {
+      const input = { cik: 2097288, accessionNumber: "0001213900-26-012345", fileName };
+      expect(() => task.inputToUrl(input)).toThrow(TaskError);
+      expect(() => task.inputToFileName(input)).toThrow(TaskError);
+    }
+  });
+
+  it("keeps a safe name's URL and cache path exactly as before", () => {
+    const task = new SecFetchAccessionDocTask({
+      cik: 2097288,
+      accessionNumber: "0001213900-26-012345",
+      fileName: "tm2412345-1_s1.htm",
+    });
+    const input = {
+      cik: 2097288,
+      accessionNumber: "0001213900-26-012345",
+      fileName: "tm2412345-1_s1.htm",
+    };
+    expect(task.inputToUrl(input)).toBe(
+      "https://www.sec.gov/Archives/edgar/data/0002097288/000121390026012345/tm2412345-1_s1.htm"
+    );
+    expect(task.inputToFileName(input)).toBe(
+      "accessiondocs/0002097288/000121390026012345-tm2412345-1_s1.htm"
+    );
   });
 });

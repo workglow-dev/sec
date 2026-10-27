@@ -10,6 +10,7 @@ import {
   assertInsideDir,
   cachedAccessionDocPath,
   resolvePrimaryDocName,
+  safePrimaryDocName,
   sanitizePrimaryDoc,
   stripXslPrefix,
 } from "./accessionDocPath";
@@ -110,6 +111,31 @@ describe("sanitizePrimaryDoc", () => {
   it("returns the trimmed basename for a safe filename", () => {
     expect(sanitizePrimaryDoc("wf-form4.xml")).toBe("wf-form4.xml");
     expect(sanitizePrimaryDoc("  wf-form4.xml  ")).toBe("wf-form4.xml");
+  });
+
+  // The name also becomes a URL path segment, where these reach another path
+  // than the file they name: a query, a fragment, or an escape the server may
+  // decode into a separator.
+  it.each(["a?b", "a#b", "d10k.htm?x=1", "%2e%2e%2fx", "a%2Fb", "a\tb", "a\u007fb"])(
+    "rejects %j, which would not survive as one URL segment",
+    (name) => {
+      expect(() => sanitizePrimaryDoc(name)).toThrow(/Refusing unsafe primary_doc/);
+    }
+  );
+
+  it.each(["d123456d10k.htm", "tm2412345-1_s1.htm", "primary_doc.xml", "0001-26-1.txt"])(
+    "keeps the names EDGAR actually serves, %j among them",
+    (name) => {
+      expect(sanitizePrimaryDoc(name)).toBe(name);
+    }
+  );
+});
+
+describe("safePrimaryDocName", () => {
+  it("is the sanitized name, or undefined where sanitizePrimaryDoc throws", () => {
+    expect(safePrimaryDocName(" s1.htm ")).toBe("s1.htm");
+    expect(safePrimaryDocName("../../x")).toBeUndefined();
+    expect(safePrimaryDocName("a?b")).toBeUndefined();
   });
 });
 
