@@ -63,8 +63,10 @@ export class SecFetchAccessionDocTask extends SecCachedFetchTask<SecFetchAccessi
  * caller is meant to have checked it, and the check lives here as well because
  * this is where it becomes a URL: a `../`, `?` or `#` reaches a different
  * sec.gov path, and the request is spent against the rate budget before the
- * cache write's own path guard ever runs. The constructor builds the URL, so a
- * refused name fails before anything is queued.
+ * cache write's own path guard ever runs. A constructor left to guess the
+ * response type builds the URL, so a refused name fails there; one given a
+ * `response_type` fails at the cache lookup or `resolveFetchInput` instead —
+ * either way before anything is queued.
  */
 function safeFileName(input: SecFetchAccessionDocTaskInput): string {
   const name = safePrimaryDocName(input.fileName);

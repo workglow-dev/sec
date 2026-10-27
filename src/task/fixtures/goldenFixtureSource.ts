@@ -13,11 +13,12 @@
  * a 429.
  */
 
+import { reportDiagnostic } from "../../util/diagnostics";
 import { fetchEdgarBytes } from "./edgarFixtureFetch";
 import type { GoldenFixtureDeps } from "./goldenFixtures";
 
 export function edgarGoldenFixtureDeps(
-  log: (msg: string) => void = (m) => process.stderr.write(m + "\n")
+  log: (msg: string) => void = reportDiagnostic
 ): GoldenFixtureDeps {
   return { log, fetchDoc: fetchEdgarBytes };
 }

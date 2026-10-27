@@ -45,7 +45,12 @@ try {
         continue;
       }
       const why = result.error?.message ?? `exit ${result.status ?? result.signal}`;
-      const output = `${result.stderr}${result.stdout}`.trim().split("\n").slice(0, 15).join("\n");
+      // Both are null when the spawn itself failed.
+      const output = `${result.stderr ?? ""}${result.stdout ?? ""}`
+        .trim()
+        .split("\n")
+        .slice(0, 15)
+        .join("\n");
       failures.push(`${line}: ${why}\n${output}`);
     }
   }

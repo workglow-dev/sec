@@ -15,7 +15,9 @@
  * read as an empty one: a blocked run used to report "no candidates".
  */
 
+import { safePrimaryDocName } from "../../util/accessionDocPath";
 import { describeFailureReason } from "../../util/describeFailure";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { fetchEdgarText as getText } from "./edgarFixtureFetch";
 import type { S1Candidate, S1FixtureDeps } from "./fetchS1Fixtures";
 
@@ -45,7 +47,10 @@ async function candidateFromCik(cik: string): Promise<S1Candidate | null> {
   const rec = sub.filings.recent;
   const idx = rec.form.findIndex((f) => /^S-1(\/A)?$/.test(f));
   if (idx < 0) return null;
-  const primaryDoc = rec.primaryDocument[idx];
+  // Filer-written, and it becomes a sec.gov URL path segment below: a name
+  // that is not one file in the accession folder leaves the candidate
+  // unfetchable rather than reaching another path.
+  const primaryDoc = safePrimaryDocName(rec.primaryDocument[idx] ?? "");
   return {
     cik: cik.replace(/\D/g, ""),
     accession: rec.accessionNumber[idx],
@@ -55,9 +60,7 @@ async function candidateFromCik(cik: string): Promise<S1Candidate | null> {
   };
 }
 
-export function edgarS1Deps(
-  log: (msg: string) => void = (m) => process.stderr.write(m + "\n")
-): S1FixtureDeps {
+export function edgarS1Deps(log: (msg: string) => void = reportDiagnostic): S1FixtureDeps {
   return {
     log,
     listCandidates: async () => {
@@ -78,7 +81,7 @@ export function edgarS1Deps(
     },
     fetchHtml: (c: S1Candidate) =>
       getText(
-        `https://www.sec.gov/Archives/edgar/data/${c.cik}/${c.accession.replace(/-/g, "")}/${c.primaryDoc}`
+        `https://www.sec.gov/Archives/edgar/data/${c.cik}/${c.accession.replace(/-/g, "")}/${encodeURIComponent(c.primaryDoc ?? "")}`
       ),
   };
 }

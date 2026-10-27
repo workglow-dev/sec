@@ -16,8 +16,19 @@ export { TypeSecCik } from "../../util/TypeSecCik";
 
 // const TypeSECForm = () => Type.Union(ALL_FORM_NAMES.map((f) => Type.Literal(f)));
 
+const KNOWN_FORMS: ReadonlySet<string> = new Set(ALL_FORM_NAMES);
+/**
+ * Unknown forms already reported. The check runs once per filing row and per
+ * company fact, so one unlisted form would otherwise repeat thousands of times
+ * in a run and fill the diagnostics buffer ahead of the lines worth reading.
+ */
+const reportedUnknownForms = new Set<string>();
+
 Format.Set("sec-form", (value: string) => {
-  if (!ALL_FORM_NAMES.includes(value as any)) reportDiagnostic(`Unknown SEC form: ${value}`);
+  if (!KNOWN_FORMS.has(value) && !reportedUnknownForms.has(value)) {
+    reportedUnknownForms.add(value);
+    reportDiagnostic(`Unknown SEC form: ${value}`);
+  }
   return true;
 });
 export const TypeSECForm = (annotations: Record<string, unknown> = {}) =>

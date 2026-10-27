@@ -67,8 +67,7 @@ export function sanitizePrimaryDoc(name: string): string {
     trimmed === "." ||
     trimmed.includes("/") ||
     trimmed.includes("\\") ||
-    trimmed.includes("\0") ||
-    trimmed.startsWith("/") ||
+    // NUL, like every control character, is in URL_UNSAFE.
     URL_UNSAFE.test(trimmed)
   ) {
     throw new Error(`Refusing unsafe primary_doc name: ${JSON.stringify(name)}`);

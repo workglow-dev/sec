@@ -23,6 +23,8 @@ export type FetchFixturesTaskOutput = {
   readonly downloaded: number;
   readonly failed: number;
   readonly skipped: number;
+  /** Under `listOnly`, the filings that would be downloaded, one tab-separated line each. */
+  readonly listed: readonly string[];
 };
 
 /** Downloads real EDGAR filings into the exempt-offering mock_data fixture tree. */
@@ -46,6 +48,7 @@ export class FetchFixturesTask extends Task<FetchFixturesTaskInput, FetchFixture
       downloaded: Type.Number(),
       failed: Type.Number(),
       skipped: Type.Number(),
+      listed: Type.Array(Type.String()),
     });
   }
 
@@ -61,6 +64,7 @@ export class FetchFixturesTask extends Task<FetchFixturesTaskInput, FetchFixture
       downloaded: result.downloaded,
       failed: result.failed,
       skipped: result.skipped,
+      listed: result.listed,
     };
   }
 }

@@ -27,7 +27,10 @@ const SCANNED = [
   "web",
 ] as const;
 
-const CONSOLE_RE = /\bconsole\.(log|warn|error|info|debug|trace)\s*\(/g;
+// A raw stream write is the same line under the frame as a console call, so it
+// counts against the same budget.
+const CONSOLE_RE =
+  /\bconsole\.(log|warn|error|info|debug|trace)\s*\(|\bprocess\.(stdout|stderr)\.write\s*\(/g;
 
 function tsFiles(dir: string): string[] {
   const out: string[] = [];

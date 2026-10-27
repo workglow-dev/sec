@@ -25,6 +25,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { resolveAsset } from "../../util/resolveAsset";
 import type { GoldenFixtureEntry } from "./goldenFixtureManifest";
 import {
@@ -238,7 +239,7 @@ export async function runGoldenFixtures(
 ): Promise<GoldenFixtureResult> {
   const entries = options.entries ?? GOLDEN_FIXTURES;
   const rootDir = options.rootDir ?? resolveGoldenFixtureRoot();
-  const log = options.deps.log ?? ((m: string) => process.stderr.write(m + "\n"));
+  const log = options.deps.log ?? reportDiagnostic;
 
   log(
     `${options.mode === "verify" ? "Verifying" : "Downloading"} ${entries.length} golden fixtures in ${rootDir}`

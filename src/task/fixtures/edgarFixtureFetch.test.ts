@@ -20,7 +20,7 @@ async function userAgentSent(value: string | undefined): Promise<string> {
   const { fetchEdgarText } = await import("./edgarFixtureFetch");
   let sent: string | undefined;
   vi.spyOn(SecFetchTask.prototype, "run").mockImplementation(async function (this: {
-    defaults: { headers?: Record<string, string> };
+    readonly defaults: { readonly headers: Record<string, string> | undefined };
   }) {
     sent = this.defaults.headers?.["User-Agent"];
     return { text: "ok" };
@@ -77,7 +77,7 @@ describe("the S-1 candidate feeds", () => {
     const { SecFetchTask } = await import("../fetch/SecFetchTask");
     const { edgarS1Deps } = await import("./s1FixtureSource");
     vi.spyOn(SecFetchTask.prototype, "run").mockImplementation(async function (this: {
-      defaults: { url: string };
+      readonly defaults: { readonly url: string };
     }) {
       const { url } = this.defaults;
       if (url.includes("SIC=6770")) return { text: "<a href='?CIK=0001234567'/>" };

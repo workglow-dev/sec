@@ -10,10 +10,10 @@ import { GATES } from "../../scripts/releaseChecks";
 
 const root = join(import.meta.dirname, "../..");
 const pkg = JSON.parse(readFileSync(join(root, "package.json"), "utf8")) as {
-  readonly packageManager?: string;
-  readonly engines?: { readonly bun?: string };
-  readonly devDependencies?: Record<string, string>;
-  readonly scripts?: Record<string, string>;
+  readonly packageManager: string | undefined;
+  readonly engines: { readonly bun: string | undefined } | undefined;
+  readonly devDependencies: Record<string, string> | undefined;
+  readonly scripts: Record<string, string> | undefined;
 };
 const workflow = readFileSync(join(root, ".github/workflows/test.yml"), "utf8");
 

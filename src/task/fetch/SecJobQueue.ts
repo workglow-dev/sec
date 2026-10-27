@@ -225,12 +225,22 @@ export async function getSecJobQueue(): Promise<SecJobQueueHandles> {
  */
 export async function startSecJobQueue(): Promise<void> {
   const secJobQueue = await getSecJobQueue();
-  if (getTaskQueueRegistry().getQueue(SecJobQueueName) === undefined) {
-    getTaskQueueRegistry().registerQueue({
+  const registry = getTaskQueueRegistry();
+  const existing = registry.getQueue(SecJobQueueName);
+  if (existing === undefined) {
+    registry.registerQueue({
       server: secJobQueue.server,
       client: secJobQueue.client,
       storage: secJobQueue.storage,
     });
+  } else if (existing.server !== secJobQueue.server) {
+    // A second start is a no-op, but a DIFFERENT queue under this name is the
+    // default one a fetch created before the runtime came up: every request
+    // would keep going through it, uncapped, while this one ran idle.
+    throw new Error(
+      `A queue named "${SecJobQueueName}" is already registered and is not the SEC fetch ` +
+        `queue — something fetched before startSecJobQueue() ran`
+    );
   }
   await secJobQueue.server.start();
 }
