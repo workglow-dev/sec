@@ -10,6 +10,7 @@ import { SEC_KB_TABLE_NAMES } from "../kb/secKbTables";
 import { secFetchRateLimiterTableNames } from "../task/fetch/secFetchRateLimiterConfig";
 import { secFetchRateLimiterLedgerComponents } from "../task/fetch/SecJobQueue";
 import { getDb } from "../util/db";
+import { reportDiagnostic } from "../util/diagnostics";
 import { getPgPool } from "../util/pg";
 import { currentSchemaName, quote } from "../util/pgIdentifiers";
 import { SEC_STORAGE_REGISTRY } from "./storageRegistry";
@@ -200,7 +201,7 @@ function resetSqlite(options: ResetAllDatabasesOptions): void {
   // scoped path below is already what either flag would degrade to. Say so
   // rather than accepting the flag and silently doing something else.
   if (options.cascade || options.dropSchema) {
-    console.warn(
+    reportDiagnostic(
       "db reset: --cascade / --drop-schema are Postgres-only; the SQLite reset drops the " +
         "tables sec owns either way."
     );
@@ -243,7 +244,7 @@ function reportUnownedTables(present: ReadonlyArray<string>, owned: ReadonlyArra
   const ownedSet = new Set(owned);
   const unowned = present.filter((name) => !ownedSet.has(name)).sort();
   if (unowned.length > 0) {
-    console.warn(
+    reportDiagnostic(
       `db reset: left ${unowned.length} table(s) in place that sec does not own: ` +
         `${unowned.join(", ")}. Review before dropping any by hand — ${MIGRATIONS_TABLE} is ` +
         `shared infrastructure that must survive, not an orphan of a removed repository.`

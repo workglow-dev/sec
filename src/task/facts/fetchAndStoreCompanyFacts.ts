@@ -8,6 +8,7 @@ import { IExecuteContext, TaskAbortedError } from "workglow";
 import type { FactsReasonCode } from "../../storage/processing/ProcessedFactsSchema";
 import { recordFactsOutcome } from "../../storage/processing/recordFactsOutcome";
 import { todayYYYYdMMdDD } from "../../util/dataCleaningUtils";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { classifyFactsFetchError } from "./classifyFactsFetchError";
 import { FetchCompanyFactsTask, FetchCompanyFactsTaskOutput } from "./FetchCompanyFactsTask";
 import { StoreCompanyFactsTask } from "./StoreCompanyFactsTask";
@@ -56,7 +57,7 @@ export async function fetchAndStoreCompanyFactsWithDeps(
 
   const recordFailure = async (reason_code: FactsReasonCode, e: unknown): Promise<void> => {
     const message = e instanceof Error ? e.message : String(e);
-    console.warn(
+    reportDiagnostic(
       `Failed to ${reason_code === "STORE_ERROR" ? "store" : "fetch"} company facts for CIK ${input.cik} (${reason_code}): ${message}`
     );
     await recordFactsOutcome({

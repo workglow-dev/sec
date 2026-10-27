@@ -12,6 +12,7 @@ import { isDryRun } from "../../cli/isDryRun";
 import { SEC_RAW_DATA_FOLDER } from "../../config/tokens";
 import { streamProcessedCikSet } from "../../storage/processing/processedCikSet";
 import { PROCESSED_SUBMISSIONS_REPOSITORY_TOKEN } from "../../storage/processing/ProcessedSubmissionsSchema";
+import { reportDryRun } from "../../util/diagnostics";
 import { fetchAndStoreSubmission } from "./fetchAndStoreSubmission";
 
 export type BootstrapSubmissionsTaskInput = {
@@ -62,7 +63,7 @@ export class BootstrapSubmissionsTask extends Task<
       const err = e as NodeJS.ErrnoException;
       if (err.code === "ENOENT") {
         if (isDryRun()) {
-          console.log(
+          reportDryRun(
             `Would bootstrap CIK submissions after bulk data populates ${submissionsDir}`
           );
           return { success: true };
@@ -99,7 +100,7 @@ export class BootstrapSubmissionsTask extends Task<
 
     if (isDryRun()) {
       const label = input.force ? "all" : "unprocessed";
-      console.log(
+      reportDryRun(
         `Would bootstrap ${ciksToProcess.length} ${label} CIK submissions (${ciks.length} total)`
       );
       return { success: true };

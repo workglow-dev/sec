@@ -10,6 +10,7 @@ import {
   EvenlySpacedRateLimiter,
   FetchUrlTaskInput,
   FetchUrlTaskOutput,
+  getTaskQueueRegistry,
   globalServiceRegistry,
   InMemoryQueueStorage,
   InMemoryRateLimiterStorage,
@@ -208,4 +209,38 @@ export async function getSecJobQueue(): Promise<SecJobQueueHandles> {
 
   handles = { server, client, storage };
   return handles;
+}
+
+/**
+ * Registers the fetch queue (see {@link getSecJobQueue}) under its name and
+ * starts it, so every `SecFetchTask` — and every task built on it — runs
+ * through it rather than through a default queue `FetchUrlTask` would create
+ * on a miss, which has none of this queue's caps or 429 handling.
+ *
+ * `bootstrapSecRuntime` calls this; so does a script that fetches from EDGAR
+ * with no database to bring up. Awaited because a fast command can otherwise
+ * reach `stopQueues()` while `start()` is still in `fixupJobs()`: stop then
+ * completes before the workers start, they start anyway, and the process never
+ * exits.
+ */
+export async function startSecJobQueue(): Promise<void> {
+  const secJobQueue = await getSecJobQueue();
+  const registry = getTaskQueueRegistry();
+  const existing = registry.getQueue(SecJobQueueName);
+  if (existing === undefined) {
+    registry.registerQueue({
+      server: secJobQueue.server,
+      client: secJobQueue.client,
+      storage: secJobQueue.storage,
+    });
+  } else if (existing.server !== secJobQueue.server) {
+    // A second start is a no-op, but a DIFFERENT queue under this name is the
+    // default one a fetch created before the runtime came up: every request
+    // would keep going through it, uncapped, while this one ran idle.
+    throw new Error(
+      `A queue named "${SecJobQueueName}" is already registered and is not the SEC fetch ` +
+        `queue — something fetched before startSecJobQueue() ran`
+    );
+  }
+  await secJobQueue.server.start();
 }

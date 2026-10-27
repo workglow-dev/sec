@@ -7,6 +7,7 @@
 import { Type } from "typebox";
 import { Task } from "workglow";
 import type { ExemptOfferingFormCode } from "../../sec/forms/exempt-offerings/form-slugs";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { fetchFixtures } from "./fetchFixtures";
 
 export type FetchFixturesTaskInput = {
@@ -22,6 +23,8 @@ export type FetchFixturesTaskOutput = {
   readonly downloaded: number;
   readonly failed: number;
   readonly skipped: number;
+  /** Under `listOnly`, the filings that would be downloaded, one tab-separated line each. */
+  readonly listed: readonly string[];
 };
 
 /** Downloads real EDGAR filings into the exempt-offering mock_data fixture tree. */
@@ -45,6 +48,7 @@ export class FetchFixturesTask extends Task<FetchFixturesTaskInput, FetchFixture
       downloaded: Type.Number(),
       failed: Type.Number(),
       skipped: Type.Number(),
+      listed: Type.Array(Type.String()),
     });
   }
 
@@ -54,12 +58,13 @@ export class FetchFixturesTask extends Task<FetchFixturesTaskInput, FetchFixture
       count: input.count,
       quarters: input.quarters,
       listOnly: input.listOnly,
-      log: (msg) => console.log(msg),
+      log: reportDiagnostic,
     });
     return {
       downloaded: result.downloaded,
       failed: result.failed,
       skipped: result.skipped,
+      listed: result.listed,
     };
   }
 }

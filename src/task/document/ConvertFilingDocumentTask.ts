@@ -15,7 +15,12 @@ import {
   FILING_SECTION_REPOSITORY_TOKEN,
   type FilingSection,
 } from "../../storage/document/FilingSectionSchema";
-import { cachedAccessionDocPath, resolvePrimaryDocName } from "../../util/accessionDocPath";
+import {
+  cachedAccessionDocPath,
+  resolvePrimaryDocName,
+  safePrimaryDocName,
+} from "../../util/accessionDocPath";
+import { reportDiagnostic, reportDryRun } from "../../util/diagnostics";
 import {
   convertFilingSubmission,
   FILING_CONVERTER_VERSION,
@@ -97,7 +102,8 @@ export function conversionCandidates(
   accessionNumber: string,
   primaryDoc: string | null | undefined
 ): string[] {
-  const primary = resolvePrimaryDocName(primaryDoc);
+  const resolved = resolvePrimaryDocName(primaryDoc);
+  const primary = resolved === undefined ? undefined : safePrimaryDocName(resolved);
   return [fullSubmissionFileName(accessionNumber), primary].filter(
     (n): n is string => n !== undefined
   );
@@ -118,6 +124,11 @@ export function conversionCandidates(
  * family and Reg A annual reports are all full-submission forms. A proxy
  * converts from its primary document and shows one document, which is what it
  * has.
+ *
+ * `undefined` when the filing's primary document is the file to fetch and its
+ * filer-written name is unsafe (see `sanitizePrimaryDoc`): nothing is fetched
+ * rather than a request spliced from it. A filing naming no primary document
+ * at all still falls back to the whole submission.
  */
 export function conversionFetchFileName(
   form: string | null | undefined,
@@ -127,7 +138,9 @@ export function conversionFetchFileName(
   if (form !== null && form !== undefined && submissionFetchKind(form) === "full-submission") {
     return fullSubmissionFileName(accessionNumber);
   }
-  return resolvePrimaryDocName(primaryDoc) ?? fullSubmissionFileName(accessionNumber);
+  const primary = resolvePrimaryDocName(primaryDoc);
+  if (primary === undefined) return fullSubmissionFileName(accessionNumber);
+  return safePrimaryDocName(primary);
 }
 
 /** The primary document's filename, falling back to the file that was loaded. */
@@ -225,7 +238,13 @@ export class ConvertFilingDocumentTask extends Task<
       input.accessionNumber,
       input.primaryDoc ?? null
     );
-    if (fileName === undefined) return undefined;
+    if (fileName === undefined) {
+      reportDiagnostic(
+        `Refusing unsafe primary_doc for ${input.cik}/${input.accessionNumber}: ` +
+          `${JSON.stringify(input.primaryDoc)} — not fetched`
+      );
+      return undefined;
+    }
     const fetchTask = context.own(
       new SecFetchAccessionDocTask(
         { cik: input.cik, accessionNumber: input.accessionNumber, fileName },
@@ -294,7 +313,7 @@ export class ConvertFilingDocumentTask extends Task<
 
     if (isDryRun()) {
       const sections = converted.reduce((sum, doc) => sum + doc.sections.length, 0);
-      console.log(
+      reportDryRun(
         `Would convert ${input.accessionNumber} (${source.docFile}) to ` +
           `${converted.length} documents, ${sections} sections`
       );

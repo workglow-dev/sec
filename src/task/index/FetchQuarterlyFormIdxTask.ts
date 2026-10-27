@@ -6,6 +6,7 @@
 
 import { Type } from "typebox";
 import { DataPortSchemaObject, IExecuteContext, Task, TaskAbortedError } from "workglow";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { parseDate, secDate, TypeOptionalSecDate, YYYYdMMdDD } from "../../util/parseDate";
 import { response_type, SecCachedFetchTask } from "../fetch/SecCachedFetchTask";
 
@@ -116,7 +117,7 @@ export function parseQuarterlyFormIdx(content: string): QuarterlyFormIdxRow[] {
       // A single calendar-invalid dateFiled must not discard the whole
       // quarter's parsed rows (parseDate now throws on e.g. Feb 30). Skip
       // the row and continue.
-      console.warn(
+      reportDiagnostic(
         `parseQuarterlyFormIdx: skipping row with unparseable date "${dateFiled}": ${
           err instanceof Error ? err.message : String(err)
         }`

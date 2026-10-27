@@ -6,6 +6,7 @@
 
 import { Type } from "typebox";
 import { Task } from "workglow";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { fetchS1Fixtures } from "./fetchS1Fixtures";
 import { edgarS1Deps } from "./s1FixtureSource";
 
@@ -49,7 +50,7 @@ export class FetchS1FixturesTask extends Task<FetchS1FixturesTaskInput, FetchS1F
     const result = await fetchS1Fixtures({
       count: input.count,
       minSpac: input.minSpac,
-      deps: edgarS1Deps((msg) => console.log(msg)),
+      deps: edgarS1Deps(reportDiagnostic),
     });
     return {
       downloaded: result.downloaded,

@@ -193,9 +193,9 @@ describe("IngestAdvSnapshotTask", () => {
     const outside = mkdtempSync(join(tmpdir(), "sec-adv-outside-"));
     writeFileSync(join(outside, "Private.csv"), "secret\nvalue\n");
     try {
-      // The same shape `BootstrapDownloadTask` guards: the task is registered,
-      // so this input arrives from `sec-base task run`, the console form and
-      // the MCP tool surface, not only from the sync leaf.
+      // The same shape `BootstrapDownloadTask` guards: the folder is task
+      // input, and the task checks it itself rather than trusting the sync
+      // leaf that usually supplies it.
       await expect(
         new IngestAdvSnapshotTask().run({
           snapshot: "2026-06",

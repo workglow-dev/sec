@@ -6,6 +6,7 @@
 
 import { globalServiceRegistry } from "workglow";
 import { isDryRun } from "../cli/isDryRun";
+import { reportDiagnostic } from "../util/diagnostics";
 import { getPgPool } from "../util/pg";
 import { currentSchemaName, quote } from "../util/pgIdentifiers";
 import { listRegisteredTables, type RegisteredTable } from "./tableRegistry";
@@ -331,7 +332,7 @@ export async function alignPostgresColumnTypes(): Promise<void> {
         // operator to have, and aborting here would turn recoverable schema
         // drift into a hard `db setup` outage — and would also skip every
         // other alignment, including the ones nothing is blocking.
-        console.warn(
+        reportDiagnostic(
           `db setup: skipped \`${step.sql}\` — dependent view(s) ${blockers
             .map((v) => `"${v}"`)
             .join(", ")} reference ${step.table}.${step.column}. ` +
@@ -349,7 +350,7 @@ export async function alignPostgresColumnTypes(): Promise<void> {
         // `setupAllDatabases()` and skip everything that follows it — the view
         // DDL, the resolver seeding, the rate-limiter tables — over one column
         // nothing else depends on.
-        console.warn(
+        reportDiagnostic(
           `db setup: skipped \`${step.sql}\` — ${
             err instanceof Error ? err.message : String(err)
           }. Resolve it and re-run \`sec db setup\`.`

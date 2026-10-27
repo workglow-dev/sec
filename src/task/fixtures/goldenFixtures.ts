@@ -25,6 +25,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { resolveAsset } from "../../util/resolveAsset";
 import type { GoldenFixtureEntry } from "./goldenFixtureManifest";
 import {
@@ -37,6 +38,32 @@ const importMetaDir = fileURLToPath(new URL(".", import.meta.url)).replace(/\/+$
 
 export function sha256Hex(bytes: Uint8Array): string {
   return createHash("sha256").update(bytes).digest("hex");
+}
+
+/**
+ * The sensor script sec.gov's CDN (Akamai Bot Manager — the response carries
+ * `x-akamai-transformed` and `_abck` / `bm_sz` cookies) splices into an HTML
+ * response just before `</body>`: an empty `<script>` with a root-relative
+ * path of random segments. EDGAR refuses active content in a submission, so a
+ * script there was never part of the filing; it is the edge rewriting the
+ * response on its way out.
+ *
+ * Matched exactly as served, two spaces included, and only immediately before
+ * the closing tag, which EDGAR's own documents spell in either case.
+ */
+const CDN_INJECTED_SCRIPT =
+  /<script type="text\/javascript" {2}src="\/[A-Za-z0-9_-]+(?:\/[A-Za-z0-9_-]+)+"><\/script>(?=<\/body>)/gi;
+
+/**
+ * The document EDGAR stores, from the bytes its CDN served: {@link
+ * CDN_INJECTED_SCRIPT} removed, every other byte kept. Decoded as latin1,
+ * which maps each byte to one code unit and back, so a document that is not
+ * valid UTF-8 survives the round trip unchanged.
+ */
+export function stripCdnInjection(served: Uint8Array): Uint8Array {
+  const text = Buffer.from(served).toString("latin1");
+  const stripped = text.replace(CDN_INJECTED_SCRIPT, "");
+  return stripped.length === text.length ? served : new Uint8Array(Buffer.from(stripped, "latin1"));
 }
 
 /**
@@ -152,7 +179,10 @@ async function processEntry(
 
   let raw: Uint8Array;
   try {
-    raw = await deps.fetchDoc(goldenFixtureUrl(entry));
+    // The manifest pins what EDGAR stores, so the CDN's own addition comes off
+    // before the digest: left on, every HTML fixture reads as remote-changed
+    // while the filing is byte-identical.
+    raw = stripCdnInjection(await deps.fetchDoc(goldenFixtureUrl(entry)));
   } catch (err) {
     return { file: entry.file, status: "error", detail: (err as Error).message };
   }
@@ -209,7 +239,7 @@ export async function runGoldenFixtures(
 ): Promise<GoldenFixtureResult> {
   const entries = options.entries ?? GOLDEN_FIXTURES;
   const rootDir = options.rootDir ?? resolveGoldenFixtureRoot();
-  const log = options.deps.log ?? ((m: string) => process.stderr.write(m + "\n"));
+  const log = options.deps.log ?? reportDiagnostic;
 
   log(
     `${options.mode === "verify" ? "Verifying" : "Downloading"} ${entries.length} golden fixtures in ${rootDir}`

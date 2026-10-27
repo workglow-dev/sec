@@ -20,6 +20,7 @@ import {
   resolveGoldenFixtureRoot,
   runGoldenFixtures,
   sha256Hex,
+  stripCdnInjection,
 } from "./goldenFixtures";
 
 const enc = (s: string): Uint8Array => new TextEncoder().encode(s);
@@ -53,6 +54,12 @@ const wrappedEntry: GoldenFixtureEntry = {
   sha256: sha256Hex(enc(BODY)),
   bytes: enc(BODY).length,
 };
+
+/** What sec.gov's CDN splices in before `</body>`, captured as served. */
+const INJECTED =
+  '<script type="text/javascript"  src="/ynyAVAgEmeE-mQUJbJCykTX0r_E/JaupmNJkLbbDpQYtcY/LgkyW3ReUgE/RhR/xbzElEwQB"></script>';
+const withInjection = (html: string): string =>
+  html.replace(/<\/body>/i, (close) => `${INJECTED}${close}`);
 
 function depsServing(map: Record<string, Uint8Array | Error>): GoldenFixtureDeps {
   return {
@@ -88,6 +95,34 @@ describe("applyGoldenFixtureTransform", () => {
     expect(() => applyGoldenFixtureTransform(enc(BODY), "strip-sgml-wrapper")).toThrow(
       /dissemination SGML wrapper/
     );
+  });
+});
+
+describe("stripCdnInjection", () => {
+  it("removes the CDN's script before </body>, in either case, and nothing else", () => {
+    for (const html of [
+      "<html><body><p>Prospectus</p>\n\n</body>\n</html>\n",
+      "<HTML><BODY><P>Prospectus</P>\n\n</BODY>\n</HTML>\n</TEXT>\n</DOCUMENT>\n",
+    ]) {
+      expect(stripCdnInjection(enc(withInjection(html)))).toEqual(enc(html));
+    }
+  });
+
+  it("keeps a document the CDN left alone byte for byte, non-UTF-8 bytes included", () => {
+    const latin1 = new Uint8Array([0x3c, 0x70, 0x3e, 0xe9, 0xa0, 0xff, 0x3c, 0x2f, 0x70, 0x3e]);
+    expect(stripCdnInjection(latin1)).toBe(latin1);
+    const withBytes = new Uint8Array([...latin1, ...enc(`${INJECTED}</body>`)]);
+    expect(stripCdnInjection(withBytes)).toEqual(new Uint8Array([...latin1, ...enc("</body>")]));
+  });
+
+  it("leaves a script that is not the CDN's: inline, elsewhere, or not before </body>", () => {
+    for (const html of [
+      '<body><script type="text/javascript">x()</script></body>',
+      `<body>${INJECTED}<p>after</p></body>`,
+      '<body><script type="text/javascript" src="https://example.com/a/b"></script></body>',
+    ]) {
+      expect(stripCdnInjection(enc(html))).toEqual(enc(html));
+    }
   });
 });
 
@@ -169,6 +204,35 @@ describe("runGoldenFixtures", () => {
     // Nothing written for the bad entry: a corrupt fixture on disk is the
     // failure mode that would otherwise masquerade as a parser regression.
     expect(() => readFileSync(join(root, "s1", verbatimEntry.file))).toThrow();
+  });
+
+  it("matches a document the CDN injected its script into, in both modes", async () => {
+    // What every HTML fixture looked like once sec.gov's edge began rewriting
+    // responses: the filing byte-identical, one script added before </body>.
+    const injectedDeps = () =>
+      depsServing({
+        [goldenFixtureUrl(verbatimEntry)]: enc(withInjection(BODY)),
+        [goldenFixtureUrl(wrappedEntry)]: enc(withInjection(WRAPPED)),
+      });
+
+    const downloaded = await runGoldenFixtures({
+      mode: "download",
+      deps: injectedDeps(),
+      rootDir: root,
+      entries,
+    });
+    expect(downloaded.written).toBe(2);
+    expect(downloaded.failed).toBe(0);
+    expect(readFileSync(join(root, "s1", verbatimEntry.file), "utf-8")).toBe(BODY);
+
+    const verified = await runGoldenFixtures({
+      mode: "verify",
+      deps: injectedDeps(),
+      rootDir: root,
+      entries,
+    });
+    expect(verified.ok).toBe(2);
+    expect(verified.failed).toBe(0);
   });
 
   it("reports a fetch failure as an error without aborting the remaining entries", async () => {

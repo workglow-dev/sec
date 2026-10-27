@@ -34,7 +34,7 @@ independently, and a comment must explain the code in front of it.
 
 ```bash
 bun install
-bun run build                # bundles the two binaries
+bun run build                # bundles the binary
 bun run typecheck            # bun check over src, scripts AND tests
 bun run test                 # vitest run
 bunx vitest run <file>       # what you normally want — the full suite is slow
@@ -42,18 +42,30 @@ bun run lint                 # oxlint + tsgolint type-aware rules; CI runs this
 bun run format               # oxfmt write — run before pushing
 ```
 
-CI runs `format-check` → `lint` → `typecheck` → `build` → `test`, cheapest first.
+CI and `bun run release-checks` run one gate list, `GATES` in
+`scripts/releaseChecks.ts`: `format-check` → `lint` → `typecheck` → `build` →
+`prepack-check` → `smoke-bins` → `test`, cheapest first. Add a gate there, never
+as a workflow step of its own — `toolchainPins.test.ts` fails on a restated one.
+`smoke-bins` starts the built `sec` unconfigured and requires `--help` and
+`--version` to exit 0.
 
 **Tests are vitest with `pool: "forks"` and `isolate: true`.** Run them with
 `bunx vitest run`, never `bun test`: the Bun shim does not give each file a fresh
 module registry, so `globalServiceRegistry` leaks between files.
 
-**Node 24, Bun 1.4+.** `node:sqlite` backs the SQLite storage and is neither stable
+**Node 24, Bun 1.4.3.** `node:sqlite` backs the SQLite storage and is neither stable
 nor unflagged below those. A subprocess CLI test on an older Bun fails with what
 reads like a storage bug.
 
+**Bun is pinned once, in `packageManager` (`bun@1.4.3`)**, and CI installs exactly
+that (`setup-bun` reads it from `package.json`). `typecheck` is `bun check`, so a
+Bun release could otherwise turn an unchanged commit red. `engines.bun` is the
+same version as a floor and `@types/bun` is the same version exactly;
+`toolchainPins.test.ts` fails when they disagree, so bump all three in one
+commit. `bun-latest.yml` runs the gates on the newest Bun weekly, gating nothing.
+
 There is one tsconfig covering src, scripts and tests. It emits nothing — the
-binaries bundle — so there is no declaration build to keep tests out of.
+binary bundles — so there is no declaration build to keep tests out of.
 
 ## The CLI
 
@@ -106,12 +118,10 @@ that list. `TestingDI` binds every entry as in-memory; call
 ## Cross-cutting rules
 
 **`bootstrapSecRuntime` is the one path that brings up the runtime** — the SQLite
-binding, DI, models, providers, the started fetch queue. Both binaries call it. A
-second entrypoint booting another way drifts silently, with late and misleading
-failures (a task resolving no model, a fetch with no rate limiter).
-
-**`registerSecTasks` is a curated list**, not every class under `src/task/`. A task
-earns its place there by answering a question on its own.
+binding, DI, models, providers, the started fetch queue. `sec` calls it from its
+one `preAction` hook, and any new entrypoint must call it too: one booting another
+way drifts silently, with late and misleading failures (a task resolving no
+model, a fetch with no rate limiter).
 
 **`getDb()` is SQLite-only** and throws when `SEC_DB_TYPE` is not sqlite. Before
 that guard it would open a stray SQLite file under Postgres, and rows written
@@ -138,6 +148,18 @@ Reg A annual reports, and **every 8-K** are fetched as the full-submission `.txt
 everything else as its primary document. 8-K is unconditional because its primary
 document is routinely four sentences pointing at the EX-99.1 that carries the news
 — for that form the exhibits *are* the filing, and only the `.txt` has them.
+
+**Diagnostics are buffered, not printed.** Anything a task wants to tell an
+operator — a CIK that failed, a skipped row, a closing summary, what a dry run
+would have done — goes through `reportDiagnostic` / `reportDryRun`
+(`src/util/diagnostics.ts`), never `console.*`. `runWorkflowCli` holds them until
+the run settles and prints them after the frame closes; outside a run they fall
+through to `console.warn`. A console write underneath the live Ink frame shifts
+the lines its erase is counting, so the tail of the message is what gets
+overwritten. Progress text goes through the task's `updateProgress`. The count is
+pinned per file in `CONSOLE_DIAGNOSTIC_BUDGET`, exact in both directions, over
+every tree but `src/cli/` (commands render their answer after the run);
+`consoleDiagnostics.test.ts` fails on a new write.
 
 **`FILING_CONVERTER_VERSION` is the only version knob left.** Bump it by hand after
 a parser change to re-select already-converted filings; never truncate, since a

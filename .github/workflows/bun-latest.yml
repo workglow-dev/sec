@@ -1,0 +1,31 @@
+name: Bun latest
+
+# The pinned Bun is what gates trunk (`test.yml`). This runs the same gates on
+# the newest Bun once a week so a release that changes `bun check` or the test
+# runner shows up here, as a red run nobody is blocked by, before the pin is
+# bumped onto it.
+
+on:
+  schedule:
+    - cron: "17 6 * * 1"
+  workflow_dispatch:
+
+env:
+  CI: "true"
+  DO_NOT_TRACK: "1"
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+      - uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+      - run: bun --version
+      - run: bun i
+      - run: bun run release-checks

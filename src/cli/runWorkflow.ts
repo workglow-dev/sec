@@ -6,6 +6,7 @@
 
 import { withCli } from "@workglow/cli";
 import { OutputTask, Workflow, type DataPorts, type ITask } from "workglow";
+import { withDeferredDiagnostics } from "../util/diagnostics";
 import { isJsonOutput } from "./isJsonOutput";
 
 /**
@@ -26,6 +27,10 @@ import { isJsonOutput } from "./isJsonOutput";
  * string) rather than throwing: on a TTY the workflow renderer intercepts a
  * thrown error with `process.exit(1)`, bypassing the calling command's error
  * handling and the CLI's teardown; only unexpected failures should throw.
+ *
+ * Anything a task reports through `reportDiagnostic` during the run is held
+ * until the run settles and printed then, clear of the live frame — whose
+ * erase counts lines, so a write underneath it overwrites the message's tail.
  */
 export async function runWorkflowCli<T>(
   tasks: readonly ITask[],
@@ -57,6 +62,6 @@ export async function runWorkflowCli<T>(
   // runs plainly by itself, which is what a redirected shard needs — the Ink UI
   // would write control codes into the logfile and grab raw mode, and a
   // backgrounded process that cannot own the TTY is stopped by SIGTTIN.
-  await withCli(wf, { interactive: !isJsonOutput() }).run(input);
+  await withDeferredDiagnostics(() => withCli(wf, { interactive: !isJsonOutput() }).run(input));
   return sink.runOutputData as T;
 }

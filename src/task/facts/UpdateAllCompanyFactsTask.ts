@@ -13,6 +13,7 @@ import {
   type ProcessedFacts,
 } from "../../storage/processing/ProcessedFactsSchema";
 import { todayYYYYdMMdDD } from "../../util/dataCleaningUtils";
+import { reportDryRun } from "../../util/diagnostics";
 import { computeFactsWorklist, type FactsWorkItem } from "./computeFactsWorklist";
 import { listFactsEligibleCiks } from "./factsEligibleCiks";
 import { fetchAndStoreCompanyFacts } from "./fetchAndStoreCompanyFacts";
@@ -103,7 +104,7 @@ export class UpdateAllCompanyFactsTask extends Task<
 
     if (isDryRun()) {
       if (input.force) {
-        console.log(
+        reportDryRun(
           `Would update ${needsUpdating.length} company facts (force — reprocessing all)`
         );
       } else {
@@ -122,7 +123,7 @@ export class UpdateAllCompanyFactsTask extends Task<
           eligible === undefined
             ? " (unfiltered — every never-processed CIK)"
             : ` (of ${neverProcessed} never processed, ${eligible.size} pass the XBRL/SIC filter)`;
-        console.log(
+        reportDryRun(
           `Would update ${needsUpdating.length} changed${retrySuffix} and ${needsProcessing.length} new company facts${scope}`
         );
       }

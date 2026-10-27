@@ -150,10 +150,6 @@ async function searchForms(
 export function registerSecFieldWidgets(): void {
   const source = "sec";
   registerWebFieldWidget({ format: "sec:cik", source, search: searchCiks });
-  // `TypeSecCik` stamps `format: "cik"` on every CIK port in every sec task
-  // schema, so registering the same picker there gives `task run` — and the
-  // whole `sec-base` surface — the search box for free, with no annotation.
-  registerWebFieldWidget({ format: "cik", source, search: searchCiks });
   registerWebFieldWidget({ format: "sec:accession", source, search: searchAccessions });
   registerWebFieldWidget({ format: "sec:form", source, search: searchForms });
 }

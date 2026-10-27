@@ -12,19 +12,18 @@
   "homepage": "https://workglow.dev",
   "description": "A worked example of the Workglow libraries: SEC EDGAR and Form ADV ingestion, filing-to-markdown conversion, and retrieval-grounded question answering over what filings say.",
   "scripts": {
-    "release-checks": "bun run format-check && bun run lint && bun run typecheck && bun run build && bun run test && bun run prepack-check",
+    "release-checks": "bun ./scripts/releaseChecks.ts",
     "release": "bun run release-checks && bunset --auto --push --commit --tag",
     "prepack-check": "bun ./scripts/checkPackedContents.ts",
+    "smoke-bins": "bun ./scripts/smokeBinaries.ts",
     "dev": "concurrently -c 'auto' -n 'sec:' 'bun:dev-*'",
     "dev-sec": "bun build --watch --target=bun --sourcemap=external --packages=external --outfile ./dist/sec.js ./src/sec.ts",
-    "dev-sec-base": "bun build --watch --target=bun --sourcemap=external --packages=external --outfile ./dist/libs-cli.js ./src/libs-cli.ts",
     "dev-hft-worker": "bun build --watch --target=bun --sourcemap=external --packages=external --outfile ./dist/hftWorker.js ./src/config/hftWorker.ts",
     "dev-types": "tsc --noEmit --watch --preserveWatchOutput",
     "build": "bun run build-clean && bun run build-js",
     "build-clean": "rm -fr dist/*",
     "build-js": "bun run build-sec",
-    "build-sec": "bun build --target=bun --packages=external --outfile ./dist/sec.js ./src/sec.ts && bun ./scripts/shebang-bin.ts ./dist/sec.js && bun run build-sec-base",
-    "build-sec-base": "bun build --target=bun --packages=external --outfile ./dist/libs-cli.js ./src/libs-cli.ts && bun ./scripts/shebang-bin.ts ./dist/libs-cli.js && bun run build-hft-worker",
+    "build-sec": "bun build --target=bun --packages=external --outfile ./dist/sec.js ./src/sec.ts && bun ./scripts/shebang-bin.ts ./dist/sec.js && bun run build-hft-worker",
     "build-hft-worker": "bun build --target=bun --packages=external --outfile ./dist/hftWorker.js ./src/config/hftWorker.ts",
     "typecheck": "bun check",
     "use-source": "bun ./scripts/bunsrc.ts source",
@@ -39,13 +38,13 @@
     "lint-fix": "oxlint --fix src scripts"
   },
   "bin": {
-    "sec": "./dist/sec.js",
-    "sec-base": "./dist/libs-cli.js"
+    "sec": "./dist/sec.js"
   },
   "files": [
     "dist",
     "!**/*.map"
   ],
+  "packageManager": "bun@1.4.3",
   "engines": {
     "node": ">=24",
     "bun": ">=1.4.3"

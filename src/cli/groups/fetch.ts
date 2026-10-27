@@ -151,6 +151,7 @@ export function addFetchCommands(program: Command): void {
               },
             }),
           ]);
+          for (const line of result.listed) console.log(line);
           console.log(
             `Done. downloaded=${result.downloaded} failed=${result.failed} skipped=${result.skipped}`
           );

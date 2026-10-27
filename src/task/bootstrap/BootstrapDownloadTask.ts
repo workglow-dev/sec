@@ -12,6 +12,7 @@ import { Dataflow, globalServiceRegistry, IExecuteContext, Task, TaskGraph } fro
 import { isDryRun } from "../../cli/isDryRun";
 import { SecUserAgent } from "../../config/Constants";
 import { SEC_RAW_DATA_FOLDER } from "../../config/tokens";
+import { reportDiagnostic, reportDryRun } from "../../util/diagnostics";
 import { SecFetchTask } from "../fetch/SecFetchTask";
 import { ArchiveToFileTask, type ArchiveToFileTaskOutput } from "./ArchiveToFileTask";
 
@@ -231,7 +232,7 @@ export class BootstrapDownloadTask extends Task<
     const force = input.force ?? false;
 
     if (dryRun) {
-      console.log(`Would download ${input.url} to ${targetDir}${force ? " (forced)" : ""}`);
+      reportDryRun(`Would download ${input.url} to ${targetDir}${force ? " (forced)" : ""}`);
       return { success: true };
     }
 
@@ -261,7 +262,7 @@ export class BootstrapDownloadTask extends Task<
       headers["If-Modified-Since"] = usableMarker.lastModified;
     }
 
-    console.log(`Downloading ${input.url} ...`);
+    await context.updateProgress(0, `Downloading ${input.url}`);
 
     // SEC bulk archives (submissions.zip, companyfacts.zip) are multi-GB, so
     // this streams to disk via a producer rather than FetchUrlTask, which
@@ -288,7 +289,7 @@ export class BootstrapDownloadTask extends Task<
     const { bytes: downloadedBytes, wrote, notModified, etag, lastModified } = response;
 
     if (notModified) {
-      console.log(
+      reportDiagnostic(
         `${input.targetFolder}: unchanged since ${usableMarker?.extractedAt ?? "the last run"} (HTTP 304) — skipping download and extraction.`
       );
       return { success: true };
@@ -317,13 +318,13 @@ export class BootstrapDownloadTask extends Task<
       usableMarker.contentLength === downloadedBytes
     ) {
       rmSync(zipPath, { force: true });
-      console.log(
+      reportDiagnostic(
         `${input.targetFolder}: unchanged since ${usableMarker.extractedAt} (matching ETag) — skipping extraction.`
       );
       return { success: true };
     }
 
-    console.log(`Download complete (${downloadedBytes} bytes). Extracting to ${targetDir} ...`);
+    await context.updateProgress(0, `Extracting ${downloadedBytes} bytes to ${targetDir}`);
 
     const unzipPath = Bun.which("unzip");
     if (!unzipPath) {
@@ -340,14 +341,19 @@ export class BootstrapDownloadTask extends Task<
     const unzipFlags = force ? "-o" : "-uo";
 
     try {
+      // Neither stream is inherited: unzip lists every member it writes, up
+      // to ~1M lines, and anything written to the terminal lands underneath
+      // the live frame. Its stderr is read concurrently (a full pipe would
+      // stall it) and kept for the error, which is where it is worth reading.
       const proc = Bun.spawn([unzipPath, unzipFlags, zipPath, "-d", targetDir], {
-        stdout: "inherit",
-        stderr: "inherit",
+        stdout: "ignore",
+        stderr: "pipe",
       });
-      const exitCode = await proc.exited;
+      const [exitCode, stderr] = await Promise.all([proc.exited, new Response(proc.stderr).text()]);
 
       if (exitCode !== 0) {
-        throw new Error(`unzip exited with code ${exitCode}`);
+        const detail = stderr.trim().split("\n").slice(-5).join("\n");
+        throw new Error(`unzip exited with code ${exitCode}${detail ? `: ${detail}` : ""}`);
       }
 
       // Record validators only after a clean extraction, so a crash mid-unzip
@@ -369,7 +375,7 @@ export class BootstrapDownloadTask extends Task<
       // anything we own).
       rmSync(zipPath, { force: true });
     }
-    console.log(`Extraction complete. Cleaned up ${zipPath}`);
+    await context.updateProgress(100, `Extracted to ${targetDir}`);
 
     return { success: true };
   }

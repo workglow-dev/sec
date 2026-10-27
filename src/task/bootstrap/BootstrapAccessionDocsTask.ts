@@ -13,6 +13,7 @@ import { isDryRun } from "../../cli/isDryRun";
 import { SEC_RAW_DATA_FOLDER } from "../../config/tokens";
 import { assertInsideDir, sanitizePrimaryDoc, stripXslPrefix } from "../../util/accessionDocPath";
 import { describeFailureReason } from "../../util/describeFailure";
+import { reportDiagnostic, reportDryRun } from "../../util/diagnostics";
 import { parseDate } from "../../util/parseDate";
 import { getHttpErrorStatus } from "../fetch/SecFetchJob";
 import { SecFetchTask } from "../fetch/SecFetchTask";
@@ -178,7 +179,7 @@ export class BootstrapAccessionDocsTask extends Task<
       try {
         safeName = sanitizePrimaryDoc(primaryName);
       } catch {
-        console.warn(
+        reportDiagnostic(
           `Skipping unsafe primary_doc for cik=${filing.cik} accession=${filing.accession_number}: ${JSON.stringify(primaryName)}`
         );
         hasPrimary = false;
@@ -311,7 +312,7 @@ export class BootstrapAccessionDocsTask extends Task<
     if (isDryRun()) {
       const range =
         input.from || input.to ? ` in range [${input.from ?? "*"} .. ${input.to ?? "*"}]` : "";
-      console.log(
+      reportDryRun(
         `Would download Feed tarballs for ${dates.length} filing day(s)${range} and extract accession documents into ${join(rawDataFolder, "accessiondocs")}`
       );
       return { success: true, daysProcessed: 0, docsWritten: 0, failed: 0 };
@@ -351,7 +352,7 @@ export class BootstrapAccessionDocsTask extends Task<
         // thousands of days and the ones already extracted are still worth
         // keeping. The marker is not written, so the next run retries it.
         failed++;
-        console.warn(
+        reportDiagnostic(
           `Feed extraction failed for ${date}: ${describeFailureReason(err, MAX_FEED_REASON_LENGTH)}`
         );
         continue;
@@ -360,7 +361,9 @@ export class BootstrapAccessionDocsTask extends Task<
         // No Feed archive for this day yet (e.g. very recent). Do NOT mark it
         // done, so a later run retries once EDGAR publishes it.
         missing++;
-        console.warn(`No Feed tarball published for ${date} yet; skipping (will retry next run).`);
+        reportDiagnostic(
+          `No Feed tarball published for ${date} yet; skipping (will retry next run).`
+        );
         continue;
       }
 
@@ -371,7 +374,7 @@ export class BootstrapAccessionDocsTask extends Task<
       writeFileSync(marker, "");
     }
 
-    console.log(
+    reportDiagnostic(
       `Accession-doc bootstrap complete: ${daysProcessed} day(s) processed, ${docsWritten} document(s) written` +
         (skipped ? `, ${skipped} day(s) already done` : "") +
         (missing ? `, ${missing} day(s) not yet published` : "") +

@@ -6,6 +6,7 @@
 
 import { globalServiceRegistry, Sqlite } from "workglow";
 import { isDryRun } from "../cli/isDryRun";
+import { reportDiagnostic } from "../util/diagnostics";
 import { getPgPool } from "../util/pg";
 import { currentSchemaName, quote } from "../util/pgIdentifiers";
 import {
@@ -220,7 +221,7 @@ export function planMissingColumns(
 
 /** The warning an executor prints for a plan entry it cannot apply. */
 function warnUnsupported(step: MissingColumn): void {
-  console.warn(
+  reportDiagnostic(
     `db setup: cannot add missing column ${step.table}.${step.column} — ${step.unsupported}. ` +
       `Add a hand-written migration, or recreate the database with \`sec db reset\` && ` +
       `\`sec db setup\` if it holds nothing you need.`
@@ -253,7 +254,7 @@ export function addMissingColumnsSqlite(db: Sqlite.Database): void {
       // Never abort `db setup` over one column: everything after this call —
       // the view DDL, the resolver seeding, the component-version rows — is
       // unrelated to it, and the failure is reported rather than swallowed.
-      console.warn(
+      reportDiagnostic(
         `db setup: skipped adding ${step.table}.${step.column} — ${
           err instanceof Error ? err.message : String(err)
         }. Resolve it and re-run \`sec db setup\`.`
@@ -300,7 +301,7 @@ export async function addMissingColumnsPostgres(): Promise<void> {
     try {
       await pool.query(sql);
     } catch (err) {
-      console.warn(
+      reportDiagnostic(
         `db setup: skipped \`${sql}\` — ${
           err instanceof Error ? err.message : String(err)
         }. Resolve it and re-run \`sec db setup\`.`

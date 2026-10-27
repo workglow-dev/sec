@@ -18,6 +18,7 @@ import {
 } from "workglow";
 import { isDryRun } from "../../cli/isDryRun";
 import { tmpPathFor, writeFully } from "../../util/atomicFileWrite";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { secDate, YYYYdMMdDD } from "../../util/parseDate";
 
 /**
@@ -155,7 +156,7 @@ export class SecFetchFileOutputCache extends TaskOutputRepository {
       // ArrayBuffer without copying; saveOutput writes it in binary mode.
       return output.arraybuffer ? Buffer.from(output.arraybuffer as ArrayBuffer) : Buffer.alloc(0);
     } else {
-      console.warn(`Unknown response type: ${response_type}, assuming text`);
+      reportDiagnostic(`Unknown response type: ${response_type}, assuming text`);
       return output.text;
     }
   }

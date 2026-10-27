@@ -6,6 +6,7 @@
 
 import { globalServiceRegistry } from "workglow";
 import { getDb } from "../../util/db";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { getPgPool } from "../../util/pg";
 import { resolveSqlBackend } from "../../util/sqlBackend";
 import { CIK_NAME_REPOSITORY_TOKEN, type CikNameRepositoryStorage } from "./CikNameSchema";
@@ -74,6 +75,9 @@ const PG_MAX_ROWS_PER_STATEMENT = 30_000;
 
 function createPostgresWriter(): CikNameBulkWriter {
   const pool = getPgPool();
+  // Summed across the run and reported once at close: a per-slice line meant
+  // one per 30,000 rows of the lookup file, which lists many CIKs twice.
+  let duplicatesDropped = 0;
 
   return {
     async writeBatch(rows: ReadonlyArray<CikNameRow>): Promise<void> {
@@ -91,11 +95,7 @@ function createPostgresWriter(): CikNameBulkWriter {
           // 60_000-bind cap (PG_MAX_ROWS_PER_STATEMENT * 2) still holds.
           const dedup = new Map<number, string>();
           for (const r of slice) dedup.set(r.cik, r.name);
-          if (dedup.size < slice.length) {
-            console.debug(
-              `cikNameBulkWriter: dedup dropped ${slice.length - dedup.size} duplicate cik(s) within a ${slice.length}-row slice`
-            );
-          }
+          duplicatesDropped += slice.length - dedup.size;
           if (dedup.size === 0) continue;
           const values: (number | string)[] = [];
           const placeholders: string[] = [];
@@ -126,6 +126,11 @@ function createPostgresWriter(): CikNameBulkWriter {
     },
     async close(): Promise<void> {
       // Pool lifetime is managed by closePgPool() at CLI shutdown.
+      if (duplicatesDropped > 0) {
+        reportDiagnostic(
+          `cik_names: ${duplicatesDropped} duplicate CIK row(s) collapsed within a batch, last name kept`
+        );
+      }
     },
   };
 }

@@ -6,6 +6,7 @@
 
 import { globalServiceRegistry } from "workglow";
 import { isDryRun } from "../cli/isDryRun";
+import { reportDiagnostic } from "../util/diagnostics";
 import { getPgPool } from "../util/pg";
 import { currentSchemaName, quote } from "../util/pgIdentifiers";
 import { nonNullType, type ObjectSchema, type PropertySchema } from "./alignPostgresColumnTypes";
@@ -198,7 +199,7 @@ export async function dropStaleCheckConstraints(): Promise<void> {
       // adds capability; this one removes a guarantee the database has been
       // enforcing, and an operator reading the log afterwards should be able to
       // see that it happened without diffing the catalog.
-      console.warn(
+      reportDiagnostic(
         `db setup: dropping stale CHECK "${step.name}" on ${step.table}.${step.column} — ` +
           `the schema no longer bounds this column at >= 0.`
       );

@@ -14,6 +14,7 @@ import {
   ENTITY_HISTORY_REPOSITORY_TOKEN,
   type EntityHistory,
 } from "../../storage/entity/EntityHistorySchema";
+import { reportDiagnostic, reportDryRun } from "../../util/diagnostics";
 import { buildNameHistoryRows, NAME_HISTORY_CHANGE_SOURCE } from "./nameHistoryRows";
 
 const CIK_FILE_PATTERN = /^CIK(\d+)\.json$/;
@@ -92,7 +93,7 @@ export class BackfillNameHistoryTask extends Task<
     }
 
     if (isDryRun()) {
-      console.log(`Would scan ${files.length} submission file(s) in ${submissionsDir}`);
+      reportDryRun(`Would scan ${files.length} submission file(s) in ${submissionsDir}`);
       return { success: true, ciksWithRenames: 0, rowsWritten: 0 };
     }
 
@@ -153,7 +154,7 @@ export class BackfillNameHistoryTask extends Task<
       rowsWritten += pending.length;
     }
 
-    console.log(
+    reportDiagnostic(
       `Name history: ${rowsWritten} row(s) across ${ciksWithRenames} renamed CIK(s) from ${scanned} submission file(s).`
     );
     return { success: true, ciksWithRenames, rowsWritten };

@@ -10,7 +10,11 @@ import { globalServiceRegistry, type IExecuteContext } from "workglow";
 import { SEC_RAW_DATA_FOLDER } from "../config/tokens";
 import { EntityRepo } from "../storage/entity/EntityRepo";
 import { FILING_REPOSITORY_TOKEN } from "../storage/filing/FilingSchema";
-import { cachedAccessionDocPath, resolvePrimaryDocName } from "../util/accessionDocPath";
+import {
+  cachedAccessionDocPath,
+  resolvePrimaryDocName,
+  safePrimaryDocName,
+} from "../util/accessionDocPath";
 import { resolveAsset } from "../util/resolveAsset";
 import {
   fullSubmissionFileName,
@@ -82,7 +86,10 @@ export async function loadFilingHtml(
     );
   }
   const filing = await new EntityRepo().getFiling(cik, accession);
-  const primaryDoc = resolvePrimaryDocName(filing?.primary_doc);
+  const recordedDoc = resolvePrimaryDocName(filing?.primary_doc);
+  // A filer-written name that is not one file in the accession folder is never
+  // probed or fetched; for a form read as the whole submission it is not needed.
+  const primaryDoc = recordedDoc === undefined ? undefined : safePrimaryDocName(recordedDoc);
   const form = filing?.form ?? null;
   // WHICH FILE is on disk is `submissionFetchKind`'s answer, not this module's.
   // The registration family, Reg A annual reports and every 8-K are cached as
@@ -95,6 +102,11 @@ export async function loadFilingHtml(
     candidates.push(fullSubmissionFileName(accession));
   }
   if (primaryDoc !== undefined) candidates.push(primaryDoc);
+  if (candidates.length === 0 && recordedDoc !== undefined) {
+    throw new Error(
+      `Refusing unsafe primary_doc for ${cik}/${accession}: ${JSON.stringify(filing?.primary_doc)}`
+    );
+  }
   if (candidates.length === 0) {
     throw new Error(
       `No primary document recorded for ${cik}/${accession} — the filing is not in the local database, or it names none`

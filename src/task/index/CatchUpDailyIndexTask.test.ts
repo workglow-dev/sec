@@ -14,6 +14,7 @@ import { setupAllDatabases } from "../../config/setupAllDatabases";
 import { resetDependencyInjectionsForTesting } from "../../config/TestingDI";
 import { SEC_DRY_RUN, SEC_RAW_DATA_FOLDER } from "../../config/tokens";
 import { CIK_LAST_UPDATE_REPOSITORY_TOKEN } from "../../storage/processing/CikLastUpdateSchema";
+import { captureDiagnosticsForTesting } from "../../util/diagnostics";
 import {
   DAILY_INDEX_CURSOR_ID,
   DAILY_INDEX_CURSOR_REPOSITORY_TOKEN,
@@ -243,9 +244,14 @@ describe("CatchUpDailyIndexTask", () => {
   it("does not write the cursor in dry-run mode", async () => {
     globalServiceRegistry.registerInstance(SEC_DRY_RUN, true);
     const runSpy = vi.spyOn(FetchDailyIndexTask.prototype, "run");
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => {});
+    const reported = captureDiagnosticsForTesting();
 
-    const result = await new CatchUpDailyIndexTask().execute({}, ctx());
+    let result;
+    try {
+      result = await new CatchUpDailyIndexTask().execute({}, ctx());
+    } finally {
+      reported.restore();
+    }
 
     expect(runSpy).not.toHaveBeenCalled();
     expect(result).toMatchObject({
@@ -255,7 +261,7 @@ describe("CatchUpDailyIndexTask", () => {
       todayFetched: false,
       lastSuccess: "2026-08-14",
     });
-    expect(logSpy).toHaveBeenCalledWith(expect.stringContaining("Would fetch completed"));
+    expect(reported.lines).toEqual([expect.stringContaining("dry run: Would fetch completed")]);
 
     const cursor = await globalServiceRegistry
       .get(DAILY_INDEX_CURSOR_REPOSITORY_TOKEN)

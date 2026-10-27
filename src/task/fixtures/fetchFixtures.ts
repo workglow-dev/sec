@@ -30,6 +30,7 @@ import {
   type ExemptOfferingFormCode,
 } from "../../sec/forms/exempt-offerings/form-slugs";
 import { accessionFromFileName, accessionWithoutDashes } from "../../util/accession";
+import { reportDiagnostic } from "../../util/diagnostics";
 import {
   FetchQuarterlyFormIdxTask,
   type QuarterlyFormIdxRow,
@@ -60,6 +61,12 @@ export interface FetchFixturesResult {
   readonly failed: number;
   readonly skipped: number;
   readonly perForm: ReadonlyMap<ExemptOfferingFormCode, { ok: number; failed: number }>;
+  /**
+   * Under `listOnly`, one `form<TAB>cik<TAB>accession<TAB>company` line per
+   * filing that would be downloaded: the command prints them once the run's
+   * frame has closed, since a write from inside the run lands underneath it.
+   */
+  readonly listed: readonly string[];
 }
 
 export function parseFormCodes(values: readonly string[]): ExemptOfferingFormCode[] {
@@ -228,14 +235,14 @@ export async function fetchFixtures(
   const count = options.count ?? DEFAULT_FIXTURES_PER_FORM;
   const quarters = options.quarters ?? defaultQuarters();
   const listOnly = options.listOnly ?? false;
-  const log = options.log ?? ((msg: string) => process.stderr.write(msg + "\n"));
+  const log = options.log ?? reportDiagnostic;
 
   if (!Number.isFinite(count) || count <= 0) {
     throw new Error("count must be a positive number");
   }
   parseQuarterStrings(quarters); // validate shape
 
-  console.log(`[sec fetch] output dir: ${MOCK_ROOT}`);
+  log(`[sec fetch] output dir: ${MOCK_ROOT}`);
 
   // Pull form.idx for each requested quarter (cached on disk via the
   // SecCachedFetchTask layer; second runs in the same quarter are free).
@@ -265,6 +272,7 @@ export async function fetchFixtures(
   let downloaded = 0;
   let failed = 0;
   let skipped = 0;
+  const listed: string[] = [];
 
   for (const form of forms) {
     const plan = buildPlan(combined, form, count);
@@ -273,7 +281,7 @@ export async function fetchFixtures(
     if (listOnly) {
       for (const row of plan.toFetch) {
         const accession = accessionFromFileName(row.fileName);
-        process.stdout.write(`${form}\t${row.cik}\t${accession}\t${row.companyName}\n`);
+        listed.push(`${form}\t${row.cik}\t${accession}\t${row.companyName}`);
       }
       perForm.set(form, { ok: 0, failed: 0 });
       continue;
@@ -285,5 +293,5 @@ export async function fetchFixtures(
     log(`Form ${form}: ok=${result.ok} failed=${result.failed}`);
   }
 
-  return { downloaded, failed, skipped, perForm };
+  return { downloaded, failed, skipped, perForm, listed };
 }

@@ -62,14 +62,6 @@ answer says which one wrote it.
 
 The old names still work: `sync`, `bootstrap`, `query`, `init` are aliases.
 
-There is a second binary, `sec-base`, which is the generic Workglow CLI — `task`,
-`model`, `mcp`, `workflow`, `agent`, `web` — with this repo's tasks registered:
-
-```sh
-sec-base task list
-sec-base task run QueryFilings --input-json '{"cik":320193}'
-```
-
 ## What does the work
 
 Each step is one Workglow package doing its job, and the point of the example is
@@ -123,15 +115,18 @@ bun run lint          # oxlint + type-aware rules
 bun run format        # oxfmt
 ```
 
-Node 24 and Bun 1.4+, declared as `engines` so a lower Node fails at install
+Node 24 and Bun 1.4.3, declared as `engines` so a lower Node fails at install
 rather than later inside `node:sqlite`. `node:sqlite` is what backs the SQLite
-storage, and it is neither stable nor unflagged below those.
+storage, and it is neither stable nor unflagged below those. CI runs exactly
+Bun 1.4.3, read from `packageManager` in `package.json` — the one place the
+version is written, since `typecheck` is `bun check` and a new Bun can change
+its answer on an unchanged commit.
 
-### The package is two binaries, not a library
+### The package is a binary, not a library
 
 `package.json` carries `bin` and no `exports`, `main` or `types`. That is the
-shape on purpose: the re-founding retired the library surface, both binaries
-bundle their dependencies, and `import ... from "@workglow/sec"` is not something
+shape on purpose: the re-founding retired the library surface, the binary
+bundles its dependencies, and `import ... from "@workglow/sec"` is not something
 this package offers. A manifest with no import entry point normally reads as a
 field someone deleted by mistake, so it is worth stating here: the absence is
 the decision.
@@ -139,7 +134,9 @@ the decision.
 ### Cutting a release
 
 `bun run release-checks` is the gate set (format, lint, typecheck, build, packed
-contents). One script runs it and then bumps:
+contents, a start of the built binary with no configuration, tests) — the same
+list CI runs on every push, from `scripts/releaseChecks.ts`. One script runs it
+and then bumps:
 
 ```sh
 bun run release

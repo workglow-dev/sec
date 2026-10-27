@@ -5,6 +5,7 @@
  */
 
 import { IExecuteContext, pipe, TaskAbortedError } from "workglow";
+import { reportDiagnostic } from "../../util/diagnostics";
 import { FetchSubmissionsTask } from "./FetchSubmissionsTask";
 import { processUpdateProcessing, StoreSubmissionsTask } from "./StoreSubmissionsTask";
 
@@ -23,7 +24,7 @@ export async function fetchAndStoreSubmission(
     // interrupted CIK (and re-fetch it forever). Mirrors the facts sibling.
     if (e instanceof TaskAbortedError) throw e;
     const message = e instanceof Error ? e.message : String(e);
-    console.warn(`Failed to fetch/store submission for CIK ${input.cik}: ${message}`);
+    reportDiagnostic(`Failed to fetch/store submission for CIK ${input.cik}: ${message}`);
     await processUpdateProcessing(input.cik, false);
   }
   // Per-item failures are recorded above; the map task itself always succeeds

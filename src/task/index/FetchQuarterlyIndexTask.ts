@@ -8,6 +8,7 @@ import { parse } from "csv-parse";
 import { Type } from "typebox";
 import { DataPortSchemaObject, IExecuteContext, Task, TaskAbortedError } from "workglow";
 import { TypeSecCik } from "../../sec/submissions/EnititySubmissionSchema";
+import { reportDiagnostic } from "../../util/diagnostics";
 import {
   parseDate,
   secDate,
@@ -127,7 +128,7 @@ export class FetchQuarterlyIndexTask extends Task<
                 // A single calendar-invalid `Date Filed` must not abort the
                 // whole quarter's CIK-update batch (parseDate now throws on
                 // e.g. Feb 30). Skip the row and continue.
-                console.warn(
+                reportDiagnostic(
                   `FetchQuarterlyIndexTask: skipping cik ${cikStr} row with unparseable date "${date}": ${
                     err instanceof Error ? err.message : String(err)
                   }`

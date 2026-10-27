@@ -5,7 +5,12 @@ import { resolve } from "path";
 import { createInterface } from "readline";
 import { globalServiceRegistry } from "workglow";
 import { SEC_DRY_RUN, SEC_JSON_OUTPUT } from "../../config/tokens";
-import { buildEnvConfig, InitApplyTask, type InitConfig } from "../../task/init/InitApplyTask";
+import {
+  buildEnvConfig,
+  InitApplyTask,
+  type InitApplyTaskOutput,
+  type InitConfig,
+} from "../../task/init/InitApplyTask";
 import { parseGlobalOptions } from "../GlobalOptions";
 import { runCommand } from "../runCommand";
 import { runWorkflowCli } from "../runWorkflow";
@@ -93,7 +98,13 @@ export function addInitCommand(parent: Command): void {
             return;
           }
 
-          await runWorkflowCli([new InitApplyTask({ defaults: { ...config, envPath } })]);
+          const applied = await runWorkflowCli<InitApplyTaskOutput>([
+            new InitApplyTask({ defaults: { ...config, envPath } }),
+          ]);
+          console.log(`Wrote ${applied.envPath}`);
+          console.log(`Created directory: ${applied.dbFolder}`);
+          console.log(`Created directory: ${applied.rawDataFolder}`);
+          console.log("Database tables created.");
 
           console.log("\n  Setup complete.");
           suggest(
