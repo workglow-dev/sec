@@ -164,9 +164,21 @@ export interface NormalizedFactValue {
 }
 
 /**
+ * A decimal literal with an optional exponent. `Number()` alone accepts more —
+ * `""` and whitespace as 0, `0x10` as 16, `Infinity` — none of which is a
+ * numeric fact's value.
+ */
+const DECIMAL_LITERAL = /^([+-]?(?:\d+(?:\.\d*)?|\.\d+))(?:[eE]([+-]?\d+))?$/;
+
+/**
  * Applies the ixt format transform, then (for numeric facts) sign and scale.
  * An unregistered transform keeps the raw text and yields a null numericValue
- * rather than guessing.
+ * rather than guessing, and so does numeric text that is not a decimal literal.
+ *
+ * The scale is folded into the literal's exponent and the result parsed once,
+ * rather than multiplying by `10 ** scale`: `Number("0.07e2")` is exactly 7,
+ * while `0.07 * 100` is `7.000000000000001`, and that product was off by an
+ * ulp for roughly one scaled two-decimal value in eleven.
  */
 export function normalizeFactValue(args: {
   readonly rawText: string;
@@ -185,8 +197,10 @@ export function normalizeFactValue(args: {
   if (!isNumeric) return { value, numericValue: null };
   if (transformed === null && format !== null) return { value, numericValue: null };
 
-  const base = Number(value);
-  if (!Number.isFinite(base)) return { value, numericValue: null };
-  const scaled = base * Math.pow(10, scale ?? 0);
+  const literal = DECIMAL_LITERAL.exec(value);
+  if (literal === null) return { value, numericValue: null };
+  const exponent = Number(literal[2] ?? 0) + (scale ?? 0);
+  const scaled = Number(`${literal[1]}e${exponent}`);
+  if (!Number.isFinite(scaled)) return { value, numericValue: null };
   return { value, numericValue: sign === "-" ? -scaled : scaled };
 }
