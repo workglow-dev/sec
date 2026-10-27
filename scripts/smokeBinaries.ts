@@ -20,7 +20,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join, resolve } from "node:path";
 
-/** Each must print its help and version unconfigured. */
+/** Each `bin` entry; each must print its help and version unconfigured. */
 const BINARIES = ["dist/sec.js"] as const;
 const ARGS = [["--help"], ["--version"]] as const;
 

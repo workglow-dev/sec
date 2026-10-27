@@ -15,10 +15,10 @@ import { registerSecProviders } from "./registerProviders";
  * Brings up everything a sec task needs before it runs: the SQLite binding, the
  * DI container, models, providers, and the started fetch queue.
  *
- * The `sec` CLI reaches this through its `preAction` hook; a second entrypoint
- * that boots sec's runtime some other way would drift from it silently — the
- * failures are late and look like unrelated bugs (a task resolving no model, a
- * fetch with no rate limiter), so both callers share this one path.
+ * The `sec` CLI reaches this through its `preAction` hook. Any other entrypoint
+ * must call this rather than boot the runtime its own way, which drifts from it
+ * silently — the failures are late and look like unrelated bugs (a task
+ * resolving no model, a fetch with no rate limiter).
  */
 export async function bootstrapSecRuntime(): Promise<void> {
   // Load the SQLite native binding only when a database may be opened.

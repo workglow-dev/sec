@@ -42,14 +42,14 @@ const FORBIDDEN_PREFIXES = ["src/"] as const;
 const FORBIDDEN_SUBSTRINGS = ["/mock_data/"] as const;
 
 /**
- * Files the package cannot run without. The two `bin` entries are obvious; the
+ * Files the package cannot run without. The `bin` entry is obvious; the
  * worker is not, and is the reason this list exists — it is spawned by URL at
  * runtime rather than imported, so nothing in the build or the type system
  * notices when it stops being emitted, and the provider that needs it only
  * warns. `sec index` then fails on a published install while every check here
  * stays green.
  */
-const REQUIRED_PATHS = ["dist/sec.js", "dist/libs-cli.js", "dist/hftWorker.js"] as const;
+const REQUIRED_PATHS = ["dist/sec.js", "dist/hftWorker.js"] as const;
 
 interface PackReport {
   readonly source: string;

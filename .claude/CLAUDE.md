@@ -34,7 +34,7 @@ independently, and a comment must explain the code in front of it.
 
 ```bash
 bun install
-bun run build                # bundles the two binaries
+bun run build                # bundles the binary
 bun run typecheck            # bun check over src, scripts AND tests
 bun run test                 # vitest run
 bunx vitest run <file>       # what you normally want — the full suite is slow
@@ -46,7 +46,7 @@ CI and `bun run release-checks` run one gate list, `GATES` in
 `scripts/releaseChecks.ts`: `format-check` → `lint` → `typecheck` → `build` →
 `prepack-check` → `smoke-bins` → `test`, cheapest first. Add a gate there, never
 as a workflow step of its own — `toolchainPins.test.ts` fails on a restated one.
-`smoke-bins` starts each built binary unconfigured and requires `--help` and
+`smoke-bins` starts the built `sec` unconfigured and requires `--help` and
 `--version` to exit 0.
 
 **Tests are vitest with `pool: "forks"` and `isolate: true`.** Run them with
@@ -65,7 +65,7 @@ same version as a floor and `@types/bun` is the same version exactly;
 commit. `bun-latest.yml` runs the gates on the newest Bun weekly, gating nothing.
 
 There is one tsconfig covering src, scripts and tests. It emits nothing — the
-binaries bundle — so there is no declaration build to keep tests out of.
+binary bundles — so there is no declaration build to keep tests out of.
 
 ## The CLI
 
@@ -118,12 +118,10 @@ that list. `TestingDI` binds every entry as in-memory; call
 ## Cross-cutting rules
 
 **`bootstrapSecRuntime` is the one path that brings up the runtime** — the SQLite
-binding, DI, models, providers, the started fetch queue. Both binaries call it. A
-second entrypoint booting another way drifts silently, with late and misleading
-failures (a task resolving no model, a fetch with no rate limiter).
-
-**`registerSecTasks` is a curated list**, not every class under `src/task/`. A task
-earns its place there by answering a question on its own.
+binding, DI, models, providers, the started fetch queue. `sec` calls it from its
+one `preAction` hook, and any new entrypoint must call it too: one booting another
+way drifts silently, with late and misleading failures (a task resolving no
+model, a fetch with no rate limiter).
 
 **`getDb()` is SQLite-only** and throws when `SEC_DB_TYPE` is not sqlite. Before
 that guard it would open a stray SQLite file under Postgres, and rows written

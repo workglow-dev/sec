@@ -18,14 +18,12 @@
     "smoke-bins": "bun ./scripts/smokeBinaries.ts",
     "dev": "concurrently -c 'auto' -n 'sec:' 'bun:dev-*'",
     "dev-sec": "bun build --watch --target=bun --sourcemap=external --packages=external --outfile ./dist/sec.js ./src/sec.ts",
-    "dev-sec-base": "bun build --watch --target=bun --sourcemap=external --packages=external --outfile ./dist/libs-cli.js ./src/libs-cli.ts",
     "dev-hft-worker": "bun build --watch --target=bun --sourcemap=external --packages=external --outfile ./dist/hftWorker.js ./src/config/hftWorker.ts",
     "dev-types": "tsc --noEmit --watch --preserveWatchOutput",
     "build": "bun run build-clean && bun run build-js",
     "build-clean": "rm -fr dist/*",
     "build-js": "bun run build-sec",
-    "build-sec": "bun build --target=bun --packages=external --outfile ./dist/sec.js ./src/sec.ts && bun ./scripts/shebang-bin.ts ./dist/sec.js && bun run build-sec-base",
-    "build-sec-base": "bun build --target=bun --packages=external --outfile ./dist/libs-cli.js ./src/libs-cli.ts && bun ./scripts/shebang-bin.ts ./dist/libs-cli.js && bun run build-hft-worker",
+    "build-sec": "bun build --target=bun --packages=external --outfile ./dist/sec.js ./src/sec.ts && bun ./scripts/shebang-bin.ts ./dist/sec.js && bun run build-hft-worker",
     "build-hft-worker": "bun build --target=bun --packages=external --outfile ./dist/hftWorker.js ./src/config/hftWorker.ts",
     "typecheck": "bun check",
     "use-source": "bun ./scripts/bunsrc.ts source",
@@ -40,8 +38,7 @@
     "lint-fix": "oxlint --fix src scripts"
   },
   "bin": {
-    "sec": "./dist/sec.js",
-    "sec-base": "./dist/libs-cli.js"
+    "sec": "./dist/sec.js"
   },
   "files": [
     "dist",
