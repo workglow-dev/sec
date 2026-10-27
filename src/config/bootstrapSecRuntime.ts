@@ -4,8 +4,8 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { getTaskQueueRegistry, Sqlite } from "workglow";
-import { getSecJobQueue } from "../task/fetch/SecJobQueue";
+import { Sqlite } from "workglow";
+import { startSecJobQueue } from "../task/fetch/SecJobQueue";
 import { DefaultDI } from "./DefaultDI";
 import { EnvToDI } from "./EnvToDI";
 import { registerSecModels } from "./registerModels";
@@ -34,15 +34,5 @@ export async function bootstrapSecRuntime(): Promise<void> {
 
   // Built lazily (after DI/env) so the Postgres-backed shared rate limiter can
   // read the pool + SEC_DB_TYPE from the registry.
-  const secJobQueue = await getSecJobQueue();
-  getTaskQueueRegistry().registerQueue({
-    server: secJobQueue.server,
-    client: secJobQueue.client,
-    storage: secJobQueue.storage,
-  });
-  // Must await: otherwise a fast command can finish and stopQueues() while
-  // start() is still in fixupJobs(); stop() then completes before workers
-  // start, and start() resumes and leaves workers running — the process never
-  // exits (e.g. `sec db status`).
-  await secJobQueue.server.start();
+  await startSecJobQueue();
 }

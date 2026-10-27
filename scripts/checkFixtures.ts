@@ -9,21 +9,32 @@
  * Audits the committed EDGAR golden fixtures against their pinned manifest.
  *
  * A CI check on committed bytes, not something a user runs — which is why it is
- * a script and not a command. It reaches EDGAR over a plain fetch and writes
- * nothing, so it needs no configured database.
+ * a script and not a command. It writes nothing and needs no configured
+ * database, but it reaches EDGAR the way the pipeline does: through the fetch
+ * queue, started here because no CLI boot brings it up. Its rate limiter is
+ * in-process, since there is no database to share one through.
  *
  *   bun run check-fixtures            # verify, exit non-zero on any mismatch
  *   bun run check-fixtures --write    # re-download what no longer matches
  */
+import { shutdownCliResources } from "../src/cli/shutdownCliResources";
+import { startSecJobQueue } from "../src/task/fetch/SecJobQueue";
 import { GoldenFixturesTask } from "../src/task/fixtures/GoldenFixturesTask";
 
 const write = process.argv.includes("--write");
 const force = process.argv.includes("--force");
 
-const result = await new GoldenFixturesTask().run({
-  mode: write ? "download" : "verify",
-  force,
-});
+await startSecJobQueue();
+let result;
+try {
+  result = await new GoldenFixturesTask().run({
+    mode: write ? "download" : "verify",
+    force,
+  });
+} finally {
+  // The queue's workers keep the process alive until they are stopped.
+  await shutdownCliResources();
+}
 
 for (const problem of result.problems) console.error(problem);
 console.log(`Done. ok=${result.ok} written=${result.written} failed=${result.failed}`);

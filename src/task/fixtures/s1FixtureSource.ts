@@ -9,31 +9,27 @@
  * from two feeds — recent S-1s (any issuer) and blank-check (SIC 6770) S-1
  * filers so the SPAC floor is satisfiable — then enriches each via the
  * submissions API to obtain `sicCode` + the primary HTML document.
+ *
+ * Every request goes through the fetch queue ({@link fetchEdgarText}), which
+ * paces it and retries a 429. A feed that still fails is thrown rather than
+ * read as an empty one: a blocked run used to report "no candidates".
  */
 
+import { describeFailureReason } from "../../util/describeFailure";
+import { fetchEdgarText as getText } from "./edgarFixtureFetch";
 import type { S1Candidate, S1FixtureDeps } from "./fetchS1Fixtures";
 
-const SEC_UA = process.env.SEC_USER_AGENT ?? "workglow-sec research contact@workglow.dev";
-const H = { "User-Agent": SEC_UA } as const;
-
-const sleep = (ms: number): Promise<void> => new Promise((r) => setTimeout(r, ms));
 const pad10 = (cik: string): string => cik.replace(/\D/g, "").padStart(10, "0");
-
-async function getText(url: string): Promise<string> {
-  const r = await fetch(url, { headers: H });
-  if (!r.ok) throw new Error(`${r.status} ${url}`);
-  return r.text();
-}
 
 async function ciksBySic(sic: string, count: number): Promise<string[]> {
   const url = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcompany&SIC=${sic}&type=S-1&dateb=&owner=include&count=${count}&output=atom`;
-  const xml = await getText(url).catch(() => "");
+  const xml = await getText(url);
   return [...xml.matchAll(/CIK=(\d+)/g)].map((m) => m[1]);
 }
 
 async function recentS1Ciks(count: number): Promise<string[]> {
   const url = `https://www.sec.gov/cgi-bin/browse-edgar?action=getcurrent&type=S-1&count=${count}&output=atom`;
-  const xml = await getText(url).catch(() => "");
+  const xml = await getText(url);
   return [...xml.matchAll(/edgar\/data\/(\d+)\//g)].map((m) => m[1]);
 }
 
@@ -69,13 +65,14 @@ export function edgarS1Deps(
       const ciks = [...new Set([...spacCiks, ...recentCiks])];
       const out: S1Candidate[] = [];
       for (const cik of ciks) {
+        // One filer that cannot be read is skipped, and said so: the sample
+        // only needs enough of them, but a skip is never silent.
         try {
           const c = await candidateFromCik(cik);
           if (c) out.push(c);
-        } catch {
-          /* skip unreachable/odd filers */
+        } catch (err) {
+          log(`Skipping CIK ${cik}: ${describeFailureReason(err, 200)}`);
         }
-        await sleep(110); // stay well under EDGAR's 10 req/s
       }
       return out;
     },
