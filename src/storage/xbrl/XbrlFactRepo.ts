@@ -12,6 +12,13 @@ import {
   type XbrlFactRow,
 } from "./XbrlFactSchema";
 
+/**
+ * Rows per `putBulk`. A large filing carries thousands of facts, and one
+ * statement binding a parameter per column per row would pass Postgres's
+ * 65,535-parameter ceiling well before that.
+ */
+const WRITE_BATCH = 200;
+
 export class XbrlFactRepo {
   private readonly storage: XbrlFactRepositoryStorage;
 
@@ -51,7 +58,9 @@ export class XbrlFactRepo {
       );
       return;
     }
-    if (rows.length > 0) await this.storage.putBulk([...rows]);
+    for (let i = 0; i < rows.length; i += WRITE_BATCH) {
+      await this.storage.putBulk(rows.slice(i, i + WRITE_BATCH));
+    }
     const keep = new Set(rows.map((r) => r.fact_index));
     const existing = (await this.storage.query({ accession_number })) ?? [];
     for (const r of existing) {
@@ -80,13 +89,5 @@ export class XbrlFactRepo {
   async countByAccession(accession_number: string): Promise<number> {
     const rows = (await this.storage.query({ accession_number })) ?? [];
     return rows.length;
-  }
-
-  /** Facts for one concept across an issuer's filings (e.g. trust balance over time). */
-  async getByCikConcept(cik: number, concept: string): Promise<XbrlFactRow[]> {
-    const rows = (await this.storage.query({ cik, concept })) ?? [];
-    return rows.sort(
-      (a, b) => a.accession_number.localeCompare(b.accession_number) || a.fact_index - b.fact_index
-    );
   }
 }

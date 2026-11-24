@@ -33,7 +33,8 @@ import {
 import { fullSubmissionFileName, submissionFetchKind } from "./submissionFetchPolicy";
 import { SecFetchAccessionDocTask } from "../fetch/SecFetchAccessionDocTask";
 import { extractInlineXbrlRows } from "./extractInlineXbrl";
-import { XBRL_FACT_REPOSITORY_TOKEN } from "../../storage/xbrl/XbrlFactSchema";
+import { XbrlFactRepo } from "../../storage/xbrl/XbrlFactRepo";
+import { XBRL_FACT_REPOSITORY_TOKEN, type XbrlFactRow } from "../../storage/xbrl/XbrlFactSchema";
 import { kbDocIdFor } from "../kb/selectDocumentsToIndex";
 
 export type ConvertFilingDocumentTaskInput = {
@@ -185,9 +186,9 @@ function primaryDocFile(converted: readonly ConvertedFilingDocument[], fallback:
 async function retireIndexedDocuments(
   documentRepo: FilingDocumentRepositoryStorage,
   cik: number,
-  accessionNumber: string
+  accessionNumber: string,
+  previous: readonly FilingDocument[]
 ): Promise<void> {
-  const previous = (await documentRepo.query({ accession_number: accessionNumber } as never)) ?? [];
   const replaced = new Set(
     previous.filter((row) => Number(row.cik) === cik).map((row) => row.doc_file)
   );
@@ -373,7 +374,7 @@ export class ConvertFilingDocumentTask extends Task<
 
     const sectionRepo = globalServiceRegistry.get(FILING_SECTION_REPOSITORY_TOKEN);
     const documentRepo = globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN);
-    const xbrlRepo = globalServiceRegistry.get(XBRL_FACT_REPOSITORY_TOKEN);
+    const xbrlFacts = new XbrlFactRepo(globalServiceRegistry.get(XBRL_FACT_REPOSITORY_TOKEN));
 
     // Both tables are replaced wholesale for this accession, not merged. A
     // re-conversion can produce FEWER documents or fewer sections than the last
@@ -381,21 +382,34 @@ export class ConvertFilingDocumentTask extends Task<
     // recognised — and merging would leave the tail of the previous render
     // stranded behind the new one with no way to notice.
     const key = { cik: input.cik, accession_number: input.accessionNumber };
-    await retireIndexedDocuments(documentRepo, input.cik, input.accessionNumber);
+    const previous =
+      (await documentRepo.query({ accession_number: input.accessionNumber } as never)) ?? [];
+    await retireIndexedDocuments(documentRepo, input.cik, input.accessionNumber, previous);
     await sectionRepo.deleteSearch(key as never);
     await documentRepo.deleteSearch(key as never);
-    // Same reasoning, and the same key: a re-conversion re-derives every fact
-    // in this submission, so the previous pass's rows are replaced rather than
-    // merged. Scoped to the rows this pass writes — `company_facts` is the API's
-    // series and is not touched here.
-    await xbrlRepo.deleteSearch({ accession_number: input.accessionNumber, source: "inline" });
+
+    // XBRL facts belong to the SUBMISSION, not to a filer: `xbrl_fact` is keyed
+    // by accession, and a co-filed accession (a holding company and its
+    // subsidiaries on one 8-K) is converted once per CIK from the same bytes.
+    // So they are extracted once per accession — skipped when a co-filer's
+    // conversion at the current converter version already wrote them (its
+    // primary header is written after its facts, so that row means they are
+    // stored) — and `sec show xbrl --cik` finds them through `filing_document`
+    // for every filer. Re-extracting here would only re-attribute the rows to
+    // this CIK.
+    const factsAlreadyCurrent = previous.some(
+      (row) =>
+        Number(row.cik) !== input.cik &&
+        row.is_primary &&
+        row.converter_version === FILING_CONVERTER_VERSION
+    );
+    const facts: XbrlFactRow[] = [];
 
     const convertedAt = new Date().toISOString();
     const headers: FilingDocument[] = [];
     let written = 0;
     let sectionTotal = 0;
     let charTotal = 0;
-    let factTotal = 0;
     for (const doc of converted) {
       const rows: FilingSection[] = doc.sections.map((section) => ({
         cik: input.cik,
@@ -414,17 +428,17 @@ export class ConvertFilingDocumentTask extends Task<
       // As-filed XBRL, read from the same bytes the markdown came from. Facts
       // are numbered across the whole submission because `fact_index` is half
       // the primary key and a document's numbering restarts at zero.
-      const facts = extractInlineXbrlRows({
-        html: doc.html,
-        accession_number: input.accessionNumber,
-        cik: input.cik,
-        indexOffset: factTotal,
-        created_at: convertedAt,
-      });
-      for (let i = 0; i < facts.length; i += WRITE_BATCH) {
-        await xbrlRepo.putBulk(facts.slice(i, i + WRITE_BATCH));
+      if (!factsAlreadyCurrent) {
+        facts.push(
+          ...extractInlineXbrlRows({
+            html: doc.html,
+            accession_number: input.accessionNumber,
+            cik: input.cik,
+            indexOffset: facts.length,
+            created_at: convertedAt,
+          })
+        );
       }
-      factTotal += facts.length;
 
       written += 1;
       sectionTotal += rows.length;
@@ -455,6 +469,19 @@ export class ConvertFilingDocumentTask extends Task<
         kb_indexed_at: null,
       });
     }
+
+    // A re-conversion re-derives every fact in the submission, so the previous
+    // pass's rows are replaced rather than merged — written first and the stale
+    // tail trimmed after, so a rejected row cannot leave the filing with none.
+    // An empty extraction clears them: it is this converter's answer, and the
+    // previous pass's facts would otherwise outlive the text they came from.
+    // `company_facts` is the API's series and is not touched here.
+    if (!factsAlreadyCurrent) {
+      await xbrlFacts.replaceForAccession(input.accessionNumber, facts, {
+        intentionalClear: true,
+      });
+    }
+    const factTotal = facts.length;
 
     // Header rows written LAST, and the PRIMARY last of all, because the
     // sweep's anti-join keys on the primary row: its presence has to mean every

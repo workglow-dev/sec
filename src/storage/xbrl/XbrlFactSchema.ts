@@ -14,6 +14,11 @@ import { TypeSecCik } from "../../util/TypeSecCik";
  * One XBRL fact extracted from a filing (inline iXBRL or instance XML), with
  * its context's period and dimensions denormalized onto the row so concept
  * queries don't need a context join.
+ *
+ * Facts belong to the submission: the key is the accession, and a co-filed
+ * submission's facts are stored once. `cik` names the filer whose conversion
+ * extracted them, not every filer, so an issuer's facts are found through
+ * `filing_document` (as `queryXbrlFacts` does) rather than by this column.
  */
 export const XbrlFactRowSchema = Type.Object({
   accession_number: Type.String({ maxLength: 25 }),
