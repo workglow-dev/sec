@@ -9,8 +9,12 @@ import { Type } from "typebox";
 import { globalServiceRegistry, IExecuteContext, Task, TaskError } from "workglow";
 import { isDryRun } from "../../cli/isDryRun";
 import { SEC_RAW_DATA_FOLDER } from "../../config/tokens";
-import type { FilingDocument } from "../../storage/document/FilingDocumentSchema";
-import { FILING_DOCUMENT_REPOSITORY_TOKEN } from "../../storage/document/FilingDocumentSchema";
+import { purgeKbDocuments } from "../../kb/purgeKbDocuments";
+import {
+  FILING_DOCUMENT_REPOSITORY_TOKEN,
+  type FilingDocument,
+  type FilingDocumentRepositoryStorage,
+} from "../../storage/document/FilingDocumentSchema";
 import {
   FILING_SECTION_REPOSITORY_TOKEN,
   type FilingSection,
@@ -30,6 +34,7 @@ import { fullSubmissionFileName, submissionFetchKind } from "./submissionFetchPo
 import { SecFetchAccessionDocTask } from "../fetch/SecFetchAccessionDocTask";
 import { extractInlineXbrlRows } from "./extractInlineXbrl";
 import { XBRL_FACT_REPOSITORY_TOKEN } from "../../storage/xbrl/XbrlFactSchema";
+import { kbDocIdFor } from "../kb/selectDocumentsToIndex";
 
 export type ConvertFilingDocumentTaskInput = {
   readonly cik: number;
@@ -162,6 +167,42 @@ function primaryDocFile(converted: readonly ConvertedFilingDocument[], fallback:
  * filing is a gap on one page — the reader still gets the EDGAR link — and it
  * must not take down the sweep around it.
  */
+/**
+ * Takes the documents a re-conversion is about to replace out of the knowledge
+ * base, before their rows are deleted.
+ *
+ * The knowledge base keys a document by accession and member alone, so what it
+ * holds was embedded from the markdown being thrown away here. Left in place,
+ * `ask` would keep quoting the old converter's text — and a member the new pass
+ * no longer emits would stay citable forever, since nothing else removes it.
+ *
+ * Every row naming one of those members, a co-filer's included, loses its
+ * `kb_indexed_at` stamp FIRST: the stamp is what the index selection trusts,
+ * and one outliving its knowledge-base row would keep the document out of the
+ * index for good. Cleared before the purge, an interruption between the two
+ * costs one re-embedding, never a missing document.
+ */
+async function retireIndexedDocuments(
+  documentRepo: FilingDocumentRepositoryStorage,
+  cik: number,
+  accessionNumber: string
+): Promise<void> {
+  const previous = (await documentRepo.query({ accession_number: accessionNumber } as never)) ?? [];
+  const replaced = new Set(
+    previous.filter((row) => Number(row.cik) === cik).map((row) => row.doc_file)
+  );
+  if (replaced.size === 0) return;
+  for (const row of previous) {
+    if (row.kb_indexed_at !== null && replaced.has(row.doc_file)) {
+      await documentRepo.put({ ...row, kb_indexed_at: null });
+    }
+  }
+  purgeKbDocuments(
+    [...replaced].map((docFile) => kbDocIdFor(accessionNumber, docFile)),
+    documentRepo
+  );
+}
+
 export class ConvertFilingDocumentTask extends Task<
   ConvertFilingDocumentTaskInput,
   ConvertFilingDocumentTaskOutput
@@ -340,6 +381,7 @@ export class ConvertFilingDocumentTask extends Task<
     // recognised — and merging would leave the tail of the previous render
     // stranded behind the new one with no way to notice.
     const key = { cik: input.cik, accession_number: input.accessionNumber };
+    await retireIndexedDocuments(documentRepo, input.cik, input.accessionNumber);
     await sectionRepo.deleteSearch(key as never);
     await documentRepo.deleteSearch(key as never);
     // Same reasoning, and the same key: a re-conversion re-derives every fact
@@ -407,9 +449,9 @@ export class ConvertFilingDocumentTask extends Task<
         converter_version: FILING_CONVERTER_VERSION,
         converted_at: convertedAt,
         // Freshly converted markdown is not in the knowledge base yet, and a
-        // RE-conversion at a newer converter version has replaced the text the
-        // knowledge base holds — so both start unindexed. Narrower than the
-        // anti-join beside it, never wider, which is the safe direction.
+        // re-conversion has just purged what the knowledge base held for it
+        // (`retireIndexedDocuments`) — so both start unindexed, which is what
+        // puts them back in front of the index selection.
         kb_indexed_at: null,
       });
     }

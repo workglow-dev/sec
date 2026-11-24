@@ -42,11 +42,11 @@ const doc = (index: number, over: Partial<FilingDocument> = {}): FilingDocument 
 });
 
 /**
- * The stamp is a cache of "is there a `kb_document` row for this", and the
- * properties below are what make it safe to read: it never claims more than the
- * anti-join, `db setup` never leaves it empty, a stamp the knowledge base stops
- * backing is cleared rather than left to hide the document, and the steady state
- * stops touching the table.
+ * The stamp says "embedded from the conversion on disk", and the properties
+ * below are what make it safe to read: `db setup` backfills it once and never
+ * leaves it empty, never re-stamps a document re-converted since, clears a
+ * stamp the knowledge base stops backing rather than leaving it to hide the
+ * document, and the steady state stops touching the table.
  */
 describe("kb_indexed_at stamp (sqlite)", () => {
   withSqliteDb("kb_indexed_stamp", [FILING_DOCUMENT_REPOSITORY_TOKEN]);
@@ -132,6 +132,26 @@ describe("kb_indexed_at stamp (sqlite)", () => {
     expect(stampOf(1)).toBe(first);
   });
 
+  it("does not re-stamp a document re-converted since it was indexed", async () => {
+    // After the backfill, null beside a `kb_document` row means the conversion
+    // cleared it: the knowledge base holds the previous converter's text.
+    // Stamping it on the next `db setup` would hide it from the index for good.
+    await seed(2);
+    await putInKb(1);
+    await putInKb(2);
+    syncKbIndexedStamp(getDb());
+    expect(stampOf(2)).not.toBeNull();
+
+    getDb()
+      .prepare("UPDATE `filing_document` SET `kb_indexed_at` = NULL WHERE `accession_number` = ?")
+      .run(accession(2));
+    syncKbIndexedStamp(getDb());
+
+    expect(stampOf(2)).toBeNull();
+    const picked = await selectDocumentsToIndex({ limit: 10 });
+    expect(picked.map((d) => d.accession_number)).toEqual([accession(2)]);
+  });
+
   it("creates the partial index, and the steady state reads it instead of the table", async () => {
     await seed(3);
     for (const i of [1, 2, 3]) await putInKb(i);
@@ -166,11 +186,10 @@ describe("kb_indexed_at stamp (sqlite)", () => {
     expect(selectionPlanDetail()).toContain("filing_document_filing_date_accession_number");
   });
 
-  it("never widens the selection: an unstamped document already in the kb is still skipped", async () => {
-    // The stamp is a narrowing of the anti-join, never a replacement for it.
-    // If a stamp goes missing — a crash between the upsert and the stamp, a
-    // database restored from before the backfill — the anti-join still has to
-    // keep that document out, because indexing it twice spends embedding calls.
+  it("before the backfill, an unstamped document already in the kb is still skipped", async () => {
+    // Until `db setup` has backfilled the column (no partial index yet), every
+    // stamp reads null whatever the knowledge base holds, so the selection
+    // keeps to the anti-join rather than re-embedding the corpus.
     await seed(2);
     await putInKb(1);
     // Deliberately NOT stamped.

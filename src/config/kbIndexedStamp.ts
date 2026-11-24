@@ -24,17 +24,17 @@ const PARTIAL_INDEX = "filing_document_kb_unindexed";
  * it replaced. Backfilling in the same pass that creates the index is what
  * keeps that state from existing.
  *
- * The cache moves in both directions, and the two directions cost differently.
- * A missing stamp costs a traversal: the selection anti-joins `kb_document`
- * anyway, so the document is found and skipped. A stamp the knowledge base no
- * longer backs costs the document itself — the selection reads the stamp as a
- * narrowing of that anti-join, so a filing whose `kb_document` row has gone is
- * never offered again, and a knowledge base rebuilt from empty stays empty.
- * So a row the knowledge base has gained is stamped, and one it no longer
- * holds is cleared, in the same pass.
+ * Once backfilled, the stamp is what the index selection reads: null means
+ * "not embedded from the conversion on disk". The two ways it can be wrong cost
+ * differently. A missing stamp costs one re-embedding. A stamp the knowledge
+ * base no longer backs costs the document itself — a filing whose
+ * `kb_document` row has gone is never offered again, and a knowledge base
+ * rebuilt from empty stays empty. So a stamp the knowledge base does not back
+ * is cleared on every pass.
  *
- * Every statement is idempotent and cheap on a database already in step: both
- * `UPDATE`s match nothing once the stamps and the knowledge base agree, and
+ * Every statement is idempotent and cheap on a database already in step: the
+ * backfill runs only in the pass that creates the index, the clear matches
+ * nothing once the stamps and the knowledge base agree, and
  * `CREATE INDEX IF NOT EXISTS` is a catalog read.
  *
  * Callers must have applied the schema's columns first — the column is added
@@ -56,9 +56,22 @@ export function syncKbIndexedStamp(db: Sqlite.Database): void {
     return;
   }
 
+  // Once only, in the pass that creates the partial index, whose presence is
+  // what says it ran. Afterwards an unstamped row beside a `kb_document` row is
+  // not a gap in the cache but a document re-converted since it was embedded —
+  // the conversion clears the stamp — and stamping it would hide it from the
+  // index for good, leaving `ask` quoting the old converter's text.
+  //
   // `converted_at` rather than a timestamp taken here: the row's own history is
   // a better answer than "whenever someone ran db setup", and it keeps the
   // backfill deterministic, so two runs cannot disagree about a row.
+  if (!indexExists(db, PARTIAL_INDEX)) backfillStamps(db);
+  clearStampsWithNoKbRow(db);
+
+  createPartialIndex(db);
+}
+
+function backfillStamps(db: Sqlite.Database): void {
   db.prepare(
     `UPDATE \`filing_document\`
         SET \`kb_indexed_at\` = \`converted_at\`
@@ -69,9 +82,6 @@ export function syncKbIndexedStamp(db: Sqlite.Database): void {
                                  || ':' || \`filing_document\`.\`doc_file\`
             )`
   ).run();
-  clearStampsWithNoKbRow(db);
-
-  createPartialIndex(db);
 }
 
 /**
@@ -80,9 +90,9 @@ export function syncKbIndexedStamp(db: Sqlite.Database): void {
  * For the path that opens the index before filling it, which is where a rebuild
  * starts: dropping the knowledge-base tables and re-running `sec index`
  * re-creates them empty, and the stamps the previous index left in
- * `filing_document` outlive it. Read as a narrowing of the anti-join, those
- * stamps exclude the whole corpus from the rebuild, and the run reports nothing
- * to do.
+ * `filing_document` outlive it. The selection reads the stamp, so those stamps
+ * would exclude the whole corpus from the rebuild, and the run would report
+ * nothing to do.
  *
  * Cheap enough to run on every open, which the full reconciliation
  * {@link syncKbIndexedStamp} is not: this is one `LIMIT 1` probe wherever the
@@ -149,7 +159,19 @@ function tableExists(db: Sqlite.Database, table: string): boolean {
   );
 }
 
-/** Whether the fast path is available — the column exists, so setup backfilled it. */
+/**
+ * Whether the stamp can be trusted: the column exists AND the partial index
+ * does, because the index is created in the pass that backfills the column. A
+ * column added without that pass reads every document as unindexed, and taking
+ * it at its word would re-embed the corpus.
+ */
 export function kbIndexedStampAvailable(db: Sqlite.Database): boolean {
-  return hasColumn(db, "filing_document", "kb_indexed_at");
+  return hasColumn(db, "filing_document", "kb_indexed_at") && indexExists(db, PARTIAL_INDEX);
+}
+
+function indexExists(db: Sqlite.Database, name: string): boolean {
+  return (
+    db.prepare("SELECT name FROM sqlite_master WHERE type = 'index' AND name = ?").all(name)
+      .length > 0
+  );
 }
