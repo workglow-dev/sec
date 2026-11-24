@@ -165,20 +165,6 @@ describe("XbrlFactRepo", () => {
     expect(await repo.countByAccession(ACCESSION)).toBe(0);
     expect(await repo.countByAccession(otherAcc)).toBe(2);
   });
-
-  it("queries one concept across an issuer's filings", async () => {
-    const repo = new XbrlFactRepo();
-    await repo.replaceForAccession(ACCESSION, rowsFromInline());
-    const other = rowsFromInline().map((r) => ({
-      ...r,
-      accession_number: "0001213900-26-047229",
-    }));
-    await repo.replaceForAccession("0001213900-26-047229", other);
-
-    const series = await repo.getByCikConcept(2114227, "spac:SaleOfSecuritiesGrossProceeds");
-    expect(series).toHaveLength(2);
-    expect(series.map((r) => r.accession_number)).toEqual([ACCESSION, "0001213900-26-047229"]);
-  });
 });
 
 /**

@@ -4,53 +4,14 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import { mkdirSync, writeFileSync } from "fs";
+import { mkdirSync } from "fs";
 import { Type } from "typebox";
 import { Sqlite, Task } from "workglow";
 import { DefaultDI } from "../../config/DefaultDI";
 import { EnvToDI } from "../../config/EnvToDI";
 import { setupAllDatabases } from "../../config/setupAllDatabases";
 import type { TaskPorts } from "../taskPorts";
-
-export interface InitConfig {
-  readonly dbType: "sqlite" | "postgres";
-  readonly dbFolder: string;
-  readonly dbName: string;
-  readonly rawDataFolder: string;
-  readonly pgUrl?: string;
-  readonly pgHost?: string;
-  readonly pgPort?: string;
-  readonly pgUser?: string;
-  readonly pgPassword?: string;
-  readonly pgDatabase?: string;
-}
-
-function escapeEnvValue(value: string): string {
-  return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"').replace(/\n/g, "\\n");
-}
-
-export function buildEnvConfig(config: InitConfig): string {
-  const lines: string[] = [
-    `SEC_DB_TYPE="${escapeEnvValue(config.dbType)}"`,
-    `SEC_DB_FOLDER="${escapeEnvValue(config.dbFolder)}"`,
-    `SEC_DB_NAME="${escapeEnvValue(config.dbName)}"`,
-    `SEC_RAW_DATA_FOLDER="${escapeEnvValue(config.rawDataFolder)}"`,
-  ];
-
-  if (config.dbType === "postgres") {
-    if (config.pgUrl) {
-      lines.push(`SEC_PG_URL="${escapeEnvValue(config.pgUrl)}"`);
-    } else {
-      if (config.pgHost) lines.push(`SEC_PG_HOST="${escapeEnvValue(config.pgHost)}"`);
-      if (config.pgPort) lines.push(`SEC_PG_PORT="${escapeEnvValue(config.pgPort)}"`);
-      if (config.pgUser) lines.push(`SEC_PG_USER="${escapeEnvValue(config.pgUser)}"`);
-      if (config.pgPassword) lines.push(`SEC_PG_PASSWORD="${escapeEnvValue(config.pgPassword)}"`);
-      if (config.pgDatabase) lines.push(`SEC_PG_DATABASE="${escapeEnvValue(config.pgDatabase)}"`);
-    }
-  }
-
-  return lines.join("\n") + "\n";
-}
+import { writeEnvFile, type InitConfig } from "./envFile";
 
 export interface InitApplyTaskInput extends InitConfig {
   readonly envPath: string;
@@ -63,8 +24,9 @@ export type InitApplyTaskOutput = {
 };
 
 /**
- * Apply phase of the first-run setup wizard: writes `.env.local`, creates the
- * data folders, wires DI from the fresh env, and creates the database tables.
+ * Apply phase of the first-run setup wizard: merges its answers into
+ * `.env.local`, creates the data folders, wires DI from the fresh env, and
+ * creates the database tables.
  */
 export class InitApplyTask extends Task<TaskPorts<InitApplyTaskInput>, InitApplyTaskOutput> {
   static readonly type = "InitApplyTask";
@@ -101,7 +63,7 @@ export class InitApplyTask extends Task<TaskPorts<InitApplyTaskInput>, InitApply
 
     // What this did is reported by `sec setup` from the output ports, once the
     // run's frame has closed, rather than printed underneath it.
-    writeFileSync(envPath, buildEnvConfig(config), "utf-8");
+    writeEnvFile(envPath, config);
     mkdirSync(config.dbFolder, { recursive: true });
     mkdirSync(config.rawDataFolder, { recursive: true });
 

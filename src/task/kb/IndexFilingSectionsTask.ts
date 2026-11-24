@@ -132,9 +132,10 @@ function toDocument(header: FilingDocument, sections: readonly FilingSection[]):
 /**
  * Embeds converted filing sections into the knowledge base `sec ask` reads.
  *
- * Resumable by anti-join, like every other sweep here: a filing whose document
- * id is already stored is skipped unless `--force`, so a large index is many
- * bounded runs rather than one that has to finish.
+ * Resumable, like every other sweep here: a document already embedded from the
+ * conversion on disk is skipped unless `--force`, so a large index is many
+ * bounded runs rather than one that has to finish. A re-converted document is
+ * not skipped — see {@link selectDocumentsToIndex}.
  */
 export class IndexFilingSectionsTask extends Task<
   TaskPorts<IndexFilingSectionsTaskInput>,
@@ -233,10 +234,10 @@ export class IndexFilingSectionsTask extends Task<
       document.doc_id = docId;
       await new KbAddDocumentTask().run({ knowledgeBase: kb, document } as never);
 
-      // Stamped only after the document is in, and never treated as the
-      // authority: the selection still anti-joins `kb_document`, so a stamp
-      // this fails to write costs a traversal on the next run rather than a
-      // document that never gets indexed.
+      // Stamped only after the document is in, so an interruption between the
+      // two costs one re-embedding on the next run — the ingest replaces the
+      // document's chunks rather than adding to them — never a document the
+      // selection believes is indexed when it is not.
       await documentRepo?.put({ ...header, kb_indexed_at: new Date().toISOString() });
 
       indexed += 1;

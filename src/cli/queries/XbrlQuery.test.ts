@@ -4,7 +4,12 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 import { beforeEach, describe, expect, it } from "vitest";
+import { globalServiceRegistry } from "workglow";
 import { resetDependencyInjectionsForTesting } from "../../config/TestingDI";
+import {
+  FILING_DOCUMENT_REPOSITORY_TOKEN,
+  type FilingDocument,
+} from "../../storage/document/FilingDocumentSchema";
 import { XbrlFactRepo } from "../../storage/xbrl/XbrlFactRepo";
 import type { XbrlFactRow } from "../../storage/xbrl/XbrlFactSchema";
 import { formatXbrlDimensions, formatXbrlPeriod, queryXbrlFacts } from "./XbrlQuery";
@@ -102,6 +107,60 @@ describe("queryXbrlFacts", () => {
     ]);
     const result = await queryXbrlFacts({ cik: 2114227, concept: "heldintrust", limit: 100 });
     expect(result.rows.map((r) => r.accession_number)).toEqual([ACCESSION, later]);
+  });
+});
+
+describe("queryXbrlFacts by CIK through converted documents", () => {
+  beforeEach(() => resetDependencyInjectionsForTesting());
+
+  const header = (cik: number, accession: string): FilingDocument => ({
+    cik,
+    accession_number: accession,
+    doc_file: "primary.htm",
+    doc_type: "8-K",
+    description: null,
+    sequence: 1,
+    is_primary: true,
+    form: "8-K",
+    filing_date: "2026-03-01",
+    title: accession,
+    section_count: 1,
+    char_count: 1,
+    converter_version: "1",
+    converted_at: "2026-03-01T00:00:00.000Z",
+    kb_indexed_at: null,
+  });
+
+  it("pages in (accession, fact_index) order across more accessions than one `in` list holds", async () => {
+    const cik = 2114227;
+    const documents = globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN);
+    const accessions = Array.from(
+      { length: 501 },
+      (_, i) => `0001213900-26-${String(i).padStart(6, "0")}`
+    );
+    for (const accession of accessions) await documents.put(header(cik, accession));
+    const first = accessions[0]!;
+    const last = accessions[500]!;
+    const repo = new XbrlFactRepo();
+    // Stored under another filer's CIK, as a co-filed submission's facts are.
+    await repo.replaceForAccession(first, [
+      makeFact({ accession_number: first, fact_index: 0, cik: 999 }),
+      makeFact({ accession_number: first, fact_index: 1, cik: 999 }),
+    ]);
+    await repo.replaceForAccession(last, [
+      makeFact({ accession_number: last, fact_index: 0 }),
+      makeFact({ accession_number: last, fact_index: 1 }),
+    ]);
+
+    const page = await queryXbrlFacts({ cik, offset: 1, limit: 2 });
+
+    expect(page.total).toBe(4);
+    expect(page.rows.map((r) => [r.accession_number, r.fact_index])).toEqual([
+      [first, 1],
+      [last, 0],
+    ]);
+    const tail = await queryXbrlFacts({ cik, offset: 3, limit: 2 });
+    expect(tail.rows.map((r) => [r.accession_number, r.fact_index])).toEqual([[last, 1]]);
   });
 });
 

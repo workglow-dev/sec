@@ -91,19 +91,23 @@ export const FilingDocumentSchema = Type.Object({
   converter_version: Type.String({ maxLength: 32, description: "Converter version stamp" }),
   converted_at: Type.String({ description: "ISO 8601 timestamp" }),
   /**
-   * When this document entered the knowledge base, or null while it has not.
+   * When this document entered the knowledge base, or null while the
+   * knowledge base does not hold it as converted now. A conversion writes it
+   * null (and purges the old embedding), so a re-converted document is offered
+   * to the index again.
    *
-   * A denormalisation of "is there a `kb_document` row for this", and it earns
-   * its keep in the one regime the index selection spends its life in. `ask`
+   * It earns its keep in the one regime the index selection spends its life in. `ask`
    * pre-indexes before every question, so after the first question the
    * selection matches nothing — and a `LIMIT` that never fills has to visit
    * every candidate to learn that. Against a partial index over the nulls, the
    * steady state is an empty index scan instead of the whole table.
    *
-   * It is a fast path, never the authority: the anti-join against
-   * `kb_document` still runs, so a stamp that is missing or stale costs a
-   * traversal rather than a document indexed twice. That direction matters,
-   * because indexing twice spends embedding calls.
+   * Once `db setup` has backfilled it (the partial index exists), the
+   * selection reads it alone; an anti-join on `kb_document` cannot tell a
+   * re-converted document from a current one. Every path that empties the
+   * knowledge base clears it, because a stamp outliving its `kb_document` row
+   * would hide the document from the index; a stamp missing costs one
+   * re-embedding.
    */
   kb_indexed_at: TypeNullable(
     Type.String({ description: "ISO 8601 timestamp the document entered the knowledge base" })

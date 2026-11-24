@@ -57,9 +57,10 @@ function kbDocumentTableExists(): boolean {
 }
 
 /**
- * Converted documents the knowledge base does not already hold, newest first.
+ * Converted documents the knowledge base does not hold as converted now,
+ * newest first.
  *
- * The set difference is an anti-join, so it is raw SQL for the same reason
+ * The set difference is an anti-join (or the stamp standing in for one), so it is raw SQL for the same reason
  * `selectFilingsToConvert` is: `ITabularStorage` cannot express one, and the
  * alternative is a knowledge-base round trip per document over a table with
  * hundreds of thousands of rows.
@@ -87,7 +88,23 @@ export async function selectDocumentsToIndex(
     return await selectByScan(documentRepo, options);
   }
 
-  const antiJoin = options.force !== true && kbDocumentTableExists();
+  // Which question decides "still needs indexing". Where `db setup` has
+  // backfilled `kb_indexed_at` it is the stamp, and the stamp alone: a
+  // conversion writes it null and purges what the knowledge base held for the
+  // document, indexing writes it once the document is in, and every path that
+  // empties the knowledge base clears it — so a null means "not embedded from
+  // the conversion on disk", including a re-conversion whose old
+  // `kb_document` row an interrupted purge left behind. An anti-join on
+  // `kb_document` cannot see that case at all, which is how a re-converted
+  // filing used to be skipped forever. It also answers from a partial index
+  // over the nulls, which a fully indexed corpus leaves empty — the regime `ask`
+  // lives in, pre-indexing before every question.
+  //
+  // Where the stamp is not trusted yet, the anti-join is all there is. The
+  // conversion's purge is what keeps that path honest about re-conversions.
+  const indexExists = options.force !== true && kbDocumentTableExists();
+  const byStamp = indexExists && kbIndexedStampAvailable(getDb());
+  const antiJoin = indexExists && !byStamp;
   const params: (string | number)[] = [];
   const clauses: string[] = [];
   if (options.cik !== undefined) {
@@ -114,26 +131,8 @@ export async function selectDocumentsToIndex(
   // transaction as the section rows, so it is the same answer reading them
   // gives.
   clauses.push("d.`section_count` > 0");
-  if (antiJoin) {
-    clauses.push("k.`doc_id` IS NULL");
-    // The fast path, and only ever a narrowing of the anti-join beside it. In
-    // the regime `ask` lives in — pre-index before every question, so nothing
-    // is left to do — the anti-join alone still has to visit every candidate
-    // before a LIMIT that never fills can conclude it is empty. This clause
-    // answers that from a partial index over the nulls, which a fully indexed
-    // corpus leaves empty.
-    //
-    // Conditional on the column existing because `db setup` backfills it in the
-    // same pass that creates the index, so its presence is what says the values
-    // can be trusted. Where it is absent the query is exactly what it was.
-    //
-    // What keeps it a narrowing and not a filter of its own is that the stamp
-    // is cleared wherever the knowledge base stops backing it — by `db setup`
-    // per row, and by opening an index that holds nothing. A stamp outliving
-    // its `kb_document` row would exclude a document the anti-join beside it
-    // selects, which is the one direction this clause must never take.
-    if (kbIndexedStampAvailable(getDb())) clauses.push("d.`kb_indexed_at` IS NULL");
-  }
+  if (byStamp) clauses.push("d.`kb_indexed_at` IS NULL");
+  if (antiJoin) clauses.push("k.`doc_id` IS NULL");
   // SQLite numbers `?` by position, so the limit binds last because it is
   // written last.
   if (options.limit !== undefined) params.push(options.limit);
@@ -195,6 +194,9 @@ export async function countAlreadyIndexed(
     clauses.push("d.`filing_date` >= ?");
     params.push(options.since);
   }
+  // The complement of the selection: a re-converted document still has its
+  // `kb_document` row until it is purged, and is not "already indexed".
+  if (kbIndexedStampAvailable(getDb())) clauses.push("d.`kb_indexed_at` IS NOT NULL");
   const where = clauses.length === 0 ? "1 = 1" : clauses.join(" AND ");
   const row = getDb()
     .prepare<(string | number)[], { n: number }>(

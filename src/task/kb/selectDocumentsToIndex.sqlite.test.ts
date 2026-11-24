@@ -7,6 +7,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { DocumentNode } from "workglow";
 import { Document, globalServiceRegistry, NodeKind } from "workglow";
+import { syncKbIndexedStamp } from "../../config/kbIndexedStamp";
 import { withSqliteDb } from "../../config/testing/withSqliteDb";
 import { getSecKnowledgeBase, resetSecKnowledgeBaseForTesting } from "../../kb/secKnowledgeBase";
 import {
@@ -50,6 +51,8 @@ describe("selectDocumentsToIndex (sqlite)", () => {
   beforeEach(async () => {
     await resetSecKnowledgeBaseForTesting();
     delete process.env.SEC_EMBEDDING_MODEL;
+    // What `db setup` does: after it, the stamp is what the selection reads.
+    syncKbIndexedStamp(getDb());
   });
 
   afterEach(async () => {
@@ -61,8 +64,8 @@ describe("selectDocumentsToIndex (sqlite)", () => {
     for (let i = 1; i <= count; i += 1) await repo.put(doc(i, over(i)) as never);
   }
 
-  /** Mark a document as already in the knowledge base. */
-  async function markIndexed(index: number) {
+  /** Put a document in the knowledge base, as the index does: the row, then the stamp. */
+  async function putInKb(index: number) {
     const kb = await getSecKnowledgeBase();
     const title = `Filing ${index}`;
     const root = { kind: NodeKind.DOCUMENT, title, children: [] } as unknown as DocumentNode;
@@ -70,11 +73,47 @@ describe("selectDocumentsToIndex (sqlite)", () => {
     await kb.upsertDocument(new Document(root, { title } as never, [], docId));
   }
 
+  async function markIndexed(index: number) {
+    await putInKb(index);
+    const repo = globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN);
+    await repo.put(doc(index, { kb_indexed_at: "2026-01-02T00:00:00.000Z" }) as never);
+  }
+
   it("returns nothing once every document is indexed", async () => {
     await seed(3);
     for (const i of [1, 2, 3]) await markIndexed(i);
 
     expect(await selectDocumentsToIndex({ limit: 5 })).toEqual([]);
+    expect(await countAlreadyIndexed({})).toBe(3);
+  });
+
+  it("re-selects a document converted again since it was indexed", async () => {
+    // A re-conversion writes the stamp null over a document whose
+    // `kb_document` row still exists, holding the previous converter's text.
+    // Anti-joining on that row is what used to keep the document out of the
+    // index for good, with `ask` citing the stale text.
+    await seed(3);
+    for (const i of [1, 2, 3]) await markIndexed(i);
+    const repo = globalServiceRegistry.get(FILING_DOCUMENT_REPOSITORY_TOKEN);
+    await repo.put(doc(2, { converted_at: "2026-02-01T00:00:00.000Z" }) as never);
+
+    const picked = await selectDocumentsToIndex({ limit: 5 });
+
+    expect(picked.map((d) => d.accession_number)).toEqual(["0000320193-26-000002"]);
+    expect(await countAlreadyIndexed({})).toBe(2);
+  });
+
+  it("falls back to the anti-join where db setup has not backfilled the stamp", async () => {
+    // No partial index means the backfill never ran, so every stamp reads null
+    // whether or not the document is indexed; trusting it would re-embed the
+    // corpus.
+    getDb().exec("DROP INDEX `filing_document_kb_unindexed`");
+    await seed(3);
+    for (const i of [1, 2]) await putInKb(i);
+
+    const picked = await selectDocumentsToIndex({ limit: 5 });
+
+    expect(picked.map((d) => d.accession_number)).toEqual(["0000320193-26-000003"]);
   });
 
   it("counts the limit in documents that need work, not documents examined", async () => {
@@ -163,8 +202,9 @@ describe("selectDocumentsToIndex (sqlite)", () => {
    */
   it("reads the newest filings from an index rather than sorting the table", async () => {
     await seed(3);
-    // The knowledge-base tables exist here, so the plan is the one with the
-    // anti-join — the shape `sec index` and `sec ask` both run.
+    // The knowledge-base tables exist here, so the plan is the one `sec index`
+    // and `sec ask` both run: the partial index over the unstamped rows, in
+    // the order the selection reads.
     await markIndexed(1);
 
     const db = getDb();
@@ -194,7 +234,7 @@ describe("selectDocumentsToIndex (sqlite)", () => {
         .all(...(prepared[0]!.params as never[])) as { detail: string }[]
     ).map((row) => row.detail);
 
-    expect(plan.join("\n")).toContain("filing_document_filing_date_accession_number");
+    expect(plan.join("\n")).toContain("filing_document_kb_unindexed");
     expect(plan.some((step) => /TEMP B-TREE FOR ORDER BY/.test(step))).toBe(false);
   });
 });
