@@ -85,6 +85,20 @@ export function envEntriesFor(config: InitConfig): ReadonlyArray<readonly [Wizar
   return entries;
 }
 
+/**
+ * Brings `env` in line with what `.env.local` now says: every owned key is set
+ * to the new answer or deleted, since a key left over from an earlier run (a
+ * `SEC_PG_URL` beside the host/port/user just chosen) would outrank it.
+ */
+export function applyEnvConfig(env: NodeJS.ProcessEnv, config: InitConfig): void {
+  const next = new Map<string, string>(envEntriesFor(config));
+  for (const key of WIZARD_ENV_KEYS) {
+    const value = next.get(key);
+    if (value === undefined) delete env[key];
+    else env[key] = value;
+  }
+}
+
 /** The wizard's lines alone, as a fresh `.env.local` would hold them. */
 export function buildEnvConfig(config: InitConfig): string {
   return (
