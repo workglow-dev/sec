@@ -4,6 +4,7 @@ import { tmpdir } from "os";
 import { join } from "path";
 import { afterEach, beforeEach, describe, expect, it } from "vitest";
 import {
+  applyEnvConfig,
   encodeEnvValue,
   mergeEnvConfig,
   redactInitConfig,
@@ -39,6 +40,65 @@ function loadWithBun(envPath: string, cwd: string): Record<string, string | unde
   expect(result.status, result.stderr).toBe(0);
   return JSON.parse(result.stdout.trim()) as Record<string, string | undefined>;
 }
+
+describe("applyEnvConfig", () => {
+  const PG_URL: InitConfig = {
+    ...SQLITE,
+    dbType: "postgres",
+    pgUrl: "postgres://user:pass@old-host:5432/edgar",
+  };
+  const PG_PARTS: InitConfig = {
+    ...SQLITE,
+    dbType: "postgres",
+    pgHost: "new-host",
+    pgPort: "5433",
+    pgUser: "admin",
+    pgDatabase: "sec_data",
+  };
+
+  // A second `sec setup` in one process: the URL the first run set would
+  // outrank the host/port/user just chosen, and the tables would be built in
+  // the old database.
+  it("deletes an owned key the new answers leave unset", () => {
+    const env: NodeJS.ProcessEnv = { ANTHROPIC_API_KEY: "kept" };
+    applyEnvConfig(env, PG_URL);
+    expect(env.SEC_PG_URL).toBe(PG_URL.pgUrl);
+    applyEnvConfig(env, PG_PARTS);
+    expect(env.SEC_PG_URL).toBeUndefined();
+    expect(env).toMatchObject({
+      SEC_DB_TYPE: "postgres",
+      SEC_PG_HOST: "new-host",
+      SEC_PG_PORT: "5433",
+      SEC_PG_USER: "admin",
+      SEC_PG_DATABASE: "sec_data",
+      ANTHROPIC_API_KEY: "kept",
+    });
+    expect("SEC_PG_PASSWORD" in env).toBe(false);
+  });
+
+  it("leaves no Postgres key behind on a switch back to SQLite", () => {
+    const env: NodeJS.ProcessEnv = {};
+    applyEnvConfig(env, PG_PARTS);
+    applyEnvConfig(env, SQLITE);
+    expect(Object.keys(env).filter((k) => k.startsWith("SEC_PG_"))).toEqual([]);
+    expect(env.SEC_DB_TYPE).toBe("sqlite");
+  });
+
+  it("matches what the written file holds", () => {
+    const env: NodeJS.ProcessEnv = {};
+    applyEnvConfig(env, PG_PARTS);
+    const fromFile = Object.fromEntries(
+      buildEnvConfig(PG_PARTS)
+        .trim()
+        .split("\n")
+        .map((line) => {
+          const at = line.indexOf("=");
+          return [line.slice(0, at), line.slice(at + 2, -1)];
+        })
+    );
+    expect(env).toEqual(fromFile);
+  });
+});
 
 describe("buildEnvConfig", () => {
   it("generates SQLite config with required vars", () => {

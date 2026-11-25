@@ -242,10 +242,15 @@ export const SEC_STORAGE_REGISTRY: readonly StorageDefinition[] = [
     // column order matches that ORDER BY exactly, so SQLite walks the index
     // backwards instead of sorting the whole table into a temp B-tree to take
     // the first page of it.
+    //
+    // `accession_number` alone finds every co-filer's rows of one submission,
+    // which a conversion reads before replacing its own; the primary key leads
+    // with `cik` and cannot.
     indexes: [
       ["form", "converter_version", "is_primary"],
       ["converted_at"],
       ["filing_date", "accession_number"],
+      ["accession_number"],
     ],
   }),
   defineStorage({
